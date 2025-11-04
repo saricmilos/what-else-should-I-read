@@ -3,6 +3,7 @@ import math
 
 # Data manipulation
 import pandas as pd        # DataFrames for structured data manipulation
+import numpy as np
 
 # Visualization libraries
 import matplotlib.pyplot as plt  # For plotting graphs and visualizations
@@ -42,53 +43,82 @@ def missing_values_heatmap(df, dataset_name="Dataset"):
 
 # Plot Missing Values BARCHART
 
-def missing_values_barchart(df, dataset_name="Dataset", top_n=None):
+def missing_values_barchart(df, dataset_name="Dataset", top_n=None, min_width=6):
     """
-    Plots a bar chart of missing values (in %) for each feature in a DataFrame,
-    with percentage values displayed above each bar.
+    Simple plot of missing-value percentages per column.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     df : pd.DataFrame
-        The dataset to analyze.
-    dataset_name : str, optional
-        Name of the dataset for the plot title. Default is "Dataset".
-    top_n : int, optional
-        If specified, show only the top_n features with the most missing values.
+        Input dataframe.
+    dataset_name : str
+        Title suffix for the chart.
+    top_n : int or None
+        If set, show only the top_n features with the most missing values.
+    min_width : float
+        Minimum figure width in inches.
     """
-    # Calculate percentage of missing values per column
+    # percent missing per column
     missing_percent = df.isnull().mean() * 100
-    
-    # Filter out columns with 0% missing values
+
+    # keep only columns with missing values > 0
     missing_percent = missing_percent[missing_percent > 0]
-    
-    # Sort descending
+
+    # sort descending
     missing_percent = missing_percent.sort_values(ascending=False)
-    
-    # If top_n specified, take only top_n features
+
     if top_n is not None:
         missing_percent = missing_percent.head(top_n)
-    
+
     if missing_percent.empty:
         print(f"No missing values in {dataset_name} dataset!")
-        return
-    
-    # Plot
-    plt.figure(figsize=(12, 6))
-    bars = plt.bar(missing_percent.index, missing_percent.values, color='salmon', edgecolor='black')
-    
-    # Add percentage labels above each bar
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2, height + 0.5, f'{height:.1f}%', ha='center', va='bottom', fontsize=10)
-    
-    plt.title(f"Missing Values by Feature - {dataset_name}", fontsize=16, fontweight='bold', pad=15)
-    plt.ylabel("Missing Values (%)", fontsize=12)
-    plt.xlabel("Features", fontsize=12)
-    plt.xticks(rotation=45, ha='right')
-    plt.ylim(0, max(missing_percent.values)*1.15)  # Add a little space above bars for labels
-    plt.tight_layout()
+        return missing_percent  # return empty Series for convenience
+
+    # number of bars (you said you have only a few columns)
+    n = len(missing_percent)
+
+    # compute figure size: width scales with number of columns
+    width = max(min_width, 1.0 * n)   # 1 inch per column is a reasonable default
+    height = 4
+    fig, ax = plt.subplots(figsize=(width, height))
+
+    x = np.arange(n)
+    vals = missing_percent.values
+
+    ax.bar(x, vals, edgecolor='black', linewidth=0.6)
+
+    # choose label format: show more decimals when values are very small
+    max_val = vals.max()
+    if max_val < 1.0:
+        fmt = "{:.4f}%"
+        text_offset = max_val * 0.05 + 0.0001
+    else:
+        fmt = "{:.1f}%"
+        text_offset = max_val * 0.03 + 0.1
+
+    # add labels above bars
+    for xi, v in zip(x, vals):
+        ax.text(xi, v + text_offset, fmt.format(v), ha='center', va='bottom', fontsize=9)
+
+    # x ticks and labels
+    ax.set_xticks(x)
+    ax.set_xticklabels(missing_percent.index.astype(str), rotation=45, ha='right', fontsize=9)
+
+    ax.set_ylabel("Missing Values (%)")
+    ax.set_title(f"Missing Values by Feature - {dataset_name}")
+
+    # y limit with small margin so labels fit
+    top = max_val * 1.2
+    if top < 1.0:
+        top = 1.0
+    ax.set_ylim(0, top)
+
+    # manual margins (keeps layout stable and avoids layout-engine conflicts)
+    fig.subplots_adjust(bottom=0.28, top=0.92)
+
     plt.show()
+
+    return missing_percent
 
 
 # Missing Values Summary
