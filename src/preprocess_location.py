@@ -16,7 +16,7 @@ def clean_country(df, country_mapping, region_mapping):
     df['country_clean'] = df['country'].apply(lambda x: 'other' if x in rare_countries else x)
     df['country_clean'] = df['country_clean'].str.strip().str.replace('"', '')
     df['country_clean'] = df['country_clean'].replace('', 'unknown')
-    df['Region'] = df['country_clean'].map(lambda x: region_mapping.get(x, 'other'))
+    df['region'] = df['country_clean'].map(lambda x: region_mapping.get(x, 'other'))
     df = df.drop(columns=['country'])
     return df
 
