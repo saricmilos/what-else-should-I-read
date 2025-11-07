@@ -24,6 +24,10 @@ TFIDF_MAX_FEATURES = int(os.getenv("TFIDF_MAX_FEATURES", "5000"))
 # --- FastAPI app ---
 app = FastAPI(title="Book Recommender API", version="1.0")
 
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to What Else Should I Read API!"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS.split(","),
