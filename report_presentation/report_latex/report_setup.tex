@@ -1,0 +1,46 @@
+% Author: Milos A. Saric, copyright 2025. https://saricmilos.com/
+% This file is report_setup.tex, a LaTeX setup for all kinds of Reports.
+
+\documentclass[10pt]{article}    % fixed: use 10pt instead of fontsize=10pt
+\usepackage[margin=0.70in]{geometry}
+\usepackage{lipsum,mwe,abstract}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+\usepackage{fancyhdr} % Custom headers and footers
+%\pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
+%\fancyhead{}
+%\fancyfoot[C]{\thepage} % Page numbering for right footer
+\setlength\parindent{0pt}
+
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{comment}
+\usepackage{enumitem}
+\usepackage{sectsty} % Allows customizing section commands
+\allsectionsfont{\normalfont \normalsize \scshape} % Section names in small caps and normal fonts
+
+\renewenvironment{abstract} % Change how the abstract look to remove margins
+ {\small
+  \begin{center}
+  \bfseries \abstractname\vspace{-.5em}\vspace{0pt}
+  \end{center}
+  \list{}{%
+    \setlength{\leftmargin}{0mm}
+    \setlength{\rightmargin}{\leftmargin}%
+  }
+  \item\relax}
+ {\endlist}
+
+\makeatletter
+\renewcommand{\maketitle}{\bgroup\setlength{\parindent}{0pt} % Change how the title looks like
+\begin{flushleft}
+  \textbf{\@title}
+  \@author \\
+  \@date
+\end{flushleft}\egroup
+}
+\makeatother
