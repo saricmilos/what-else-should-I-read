@@ -1,7 +1,9 @@
 # app/app.py
 import os
 import traceback
-from typing import List, Optional
+import asyncio
+import logging
+from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,29 +16,50 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 
-# --- Config from env ---
+# -------------------------
+# Config from environment
+# -------------------------
 MODEL_DIR = os.getenv("MODEL_DIR", "models")
 MODEL_FILE = os.getenv("MODEL_FILE", "book_item_model.pkl")
 NN_FILE = os.getenv("NN_FILE", "nn_index.pkl")
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
 TFIDF_MAX_FEATURES = int(os.getenv("TFIDF_MAX_FEATURES", "5000"))
 
-# --- FastAPI app ---
+# -------------------------
+# Logging
+# -------------------------
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logger = logging.getLogger("book-recommender")
+
+# -------------------------
+# FastAPI app
+# -------------------------
 app = FastAPI(title="Book Recommender API", version="1.0")
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to What Else Should I Read API!"}
+# Normalize CORS origins
+def _parse_cors(origins: str):
+    if not origins:
+        return []
+    # allow single "*" to signify all origins
+    if origins.strip() == "*":
+        return ["*"]
+    return [o.strip() for o in origins.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS.split(","),
+    allow_origins=_parse_cors(CORS_ORIGINS),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to What Else Should I Read API!"}
+
+# -------------------------
 # Response schemas
+# -------------------------
 class RecItem(BaseModel):
     book_title: str
     score: float
@@ -50,22 +73,26 @@ class RecommendResponse(BaseModel):
     matched_title: Optional[str]
     recommendations: List[RecItem]
 
-# Global objects
-book_to_idx = {}
-idx_to_book = {}
-item_factors = None
-nn = None
-book_metadata = None
-tfidf = None
-meta_titles = None
-meta_title_to_row = None
+# -------------------------
+# Global objects (initialized at startup)
+# -------------------------
+book_to_idx: Dict[str, int] = {}
+idx_to_book: Dict[int, str] = {}
+item_factors: Optional[np.ndarray] = None
+nn: Optional[NearestNeighbors] = None
+book_metadata: Optional[Any] = None  # DataFrame or dict
+tfidf: Optional[TfidfVectorizer] = None
+meta_titles: Optional[List[str]] = None
+meta_title_to_row: Optional[Dict[str, int]] = None
 tfidf_matrix = None
 
-# --- Utilities ---
+# -------------------------
+# Utilities / Model loading
+# -------------------------
 def safe_load_models():
     """
     Load model artifacts from MODEL_DIR.
-    Expects book_item_model.pkl to contain at least:
+    Expects a joblib file with keys:
       - item_factors (array-like)
       - book_to_idx (dict)
       - idx_to_book (dict)
@@ -76,6 +103,7 @@ def safe_load_models():
     model_path = os.path.join(MODEL_DIR, MODEL_FILE)
     nn_path = os.path.join(MODEL_DIR, NN_FILE)
 
+    logger.info("Loading model from %s", model_path)
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found at {model_path}")
 
@@ -89,57 +117,76 @@ def safe_load_models():
     if item_factors_local is None:
         raise ValueError("item_factors not present in the model file.")
 
-    # assign mappings
-    book_to_idx = book_to_idx_local.copy() if isinstance(book_to_idx_local, dict) else dict(book_to_idx_local)
-    idx_to_book = idx_to_book_local.copy() if isinstance(idx_to_book_local, dict) else dict(idx_to_book_local)
-    globals()['book_to_idx'] = book_to_idx
-    globals()['idx_to_book'] = idx_to_book
+    # assign mappings (make copies to avoid accidental mutation)
+    if isinstance(book_to_idx_local, dict):
+        book_to_idx = book_to_idx_local.copy()
+    else:
+        book_to_idx = dict(book_to_idx_local)
+
+    if isinstance(idx_to_book_local, dict):
+        idx_to_book = idx_to_book_local.copy()
+    else:
+        idx_to_book = dict(idx_to_book_local)
 
     # item_factors -> numpy array, ensure 2D
     item_factors_arr = np.asarray(item_factors_local)
     if item_factors_arr.ndim == 1:
         item_factors_arr = item_factors_arr.reshape(-1, 1)
+
     # normalize rows (L2) so cosine ~ dot
     try:
         item_factors_arr = normalize(item_factors_arr, axis=1)
     except Exception:
-        # fallback: skip normalization if it fails
-        pass
-    globals()['item_factors'] = item_factors_arr
+        logger.warning("Failed to normalize item_factors; continuing without normalization", exc_info=True)
 
-    # book_metadata: keep as DataFrame if possible, otherwise dict
+    # book_metadata handling
     if isinstance(book_metadata_local, pd.DataFrame):
-        globals()['book_metadata'] = book_metadata_local
+        book_metadata = book_metadata_local.copy()
     elif isinstance(book_metadata_local, dict):
-        # keep dict as-is
-        globals()['book_metadata'] = book_metadata_local
+        book_metadata = book_metadata_local.copy()
     elif book_metadata_local is None:
-        globals()['book_metadata'] = None
+        book_metadata = None
     else:
-        # try to coerce to DataFrame
         try:
-            globals()['book_metadata'] = pd.DataFrame(book_metadata_local)
+            book_metadata = pd.DataFrame(book_metadata_local)
         except Exception:
-            globals()['book_metadata'] = None
+            logger.warning("Unable to coerce book_metadata to DataFrame; storing None", exc_info=True)
+            book_metadata = None
+
+    # set globals safely
+    globals()['book_to_idx'] = book_to_idx
+    globals()['idx_to_book'] = idx_to_book
+    globals()['item_factors'] = item_factors_arr
+    globals()['book_metadata'] = book_metadata
 
     # load or build NN index
     if os.path.exists(nn_path):
         try:
+            logger.info("Loading NN index from %s", nn_path)
             globals()['nn'] = joblib.load(nn_path)
         except Exception:
+            logger.warning("Failed to load prebuilt NN index; will build a new one", exc_info=True)
             globals()['nn'] = None
 
     if globals().get('nn') is None:
-        # build nearest neighbors with cosine metric
+        logger.info("Building NearestNeighbors index (metric=cosine)")
         n_neighbors = min(50, item_factors_arr.shape[0])
         nn_local = NearestNeighbors(n_neighbors=n_neighbors, algorithm='brute', metric='cosine')
         nn_local.fit(item_factors_arr)
         globals()['nn'] = nn_local
 
-def find_exact_or_fuzzy(title: str, cutoff: float = 0.6):
+def find_exact_or_fuzzy(title: str, cutoff: float = 0.6) -> Optional[str]:
     """Return exact title if found; otherwise try fuzzy match and return matched title or None."""
+    if not title:
+        return None
+    # exact match
     if title in book_to_idx:
         return title
+    # try case-insensitive exact
+    lower_map = {k.lower(): k for k in book_to_idx.keys()}
+    if title.lower() in lower_map:
+        return lower_map[title.lower()]
+    # fuzzy match
     candidates = get_close_matches(title, list(book_to_idx.keys()), n=1, cutoff=cutoff)
     return candidates[0] if candidates else None
 
@@ -150,6 +197,7 @@ def recommend_cf(title: str, topn: int = 10, exclude_self: bool = True):
     bidx = book_to_idx[title]
     vec = item_factors[bidx].reshape(1, -1)
     k = min(topn + (1 if exclude_self else 0), item_factors.shape[0])
+    # kneighbors returns distances (cosine distance if metric='cosine')
     dists, idxs = nn.kneighbors(vec, n_neighbors=k)
     idxs = idxs[0]
     dists = dists[0]
@@ -157,46 +205,57 @@ def recommend_cf(title: str, topn: int = 10, exclude_self: bool = True):
     for i, dist in zip(idxs, dists):
         if exclude_self and i == bidx:
             continue
-        recs.append((idx_to_book[i], max(0.0, 1.0 - float(dist))))
+        # convert cosine distance to similarity-like score in [0,1]
+        score = max(0.0, 1.0 - float(dist))
+        recs.append((idx_to_book.get(i, ""), score))
         if len(recs) >= topn:
             break
     return recs
 
-# --- Content-based TF-IDF fallback setup ---
+# -------------------------
+# TF-IDF / content fallback
+# -------------------------
 def build_tfidf_on_metadata():
     """Build TF-IDF matrix on book metadata (title + author + publisher)."""
     global tfidf, meta_titles, meta_title_to_row, tfidf_matrix
     if book_metadata is None:
+        logger.info("No book_metadata available; skipping TF-IDF build")
         return
 
-    # try to produce a DataFrame 'md' with a 'book_title' column
+    # normalize book_metadata into DataFrame with 'book_title' column
     if isinstance(book_metadata, pd.DataFrame):
         md = book_metadata.copy()
+        # try to ensure title column exists or index holds title
+        if 'book_title' not in md.columns and md.index.name is None:
+            # leave as-is; we'll try index later
+            pass
     elif isinstance(book_metadata, dict):
-        # dict keyed by title -> dict(fields)
         try:
             md = pd.DataFrame.from_dict(book_metadata, orient='index').reset_index().rename(columns={'index': 'book_title'})
         except Exception:
+            logger.exception("Failed to coerce dict book_metadata into DataFrame")
             return
     else:
-        # cannot build TF-IDF
+        logger.warning("Unsupported book_metadata type for TF-IDF: %s", type(book_metadata))
         return
 
+    # Ensure a 'book_title' field
     if 'book_title' not in md.columns:
-        # try to infer title column
+        # if index contains titles, move to column
         md = md.reset_index().rename(columns={md.index.name or 'index': 'book_title'}).reset_index(drop=True)
 
-    # build content
     md['book_title'] = md['book_title'].astype(str)
+    # Build a 'content' field combining title, author, publisher
     md['content'] = (
         md['book_title'].fillna('') + ' ' +
-        md.get('book_author', '').fillna('') + ' ' +
-        md.get('publisher', '').fillna('').astype(str)
+        md.get('book_author', pd.Series('', index=md.index)).fillna('').astype(str) + ' ' +
+        md.get('publisher', pd.Series('', index=md.index)).fillna('').astype(str)
     )
 
     # restrict to titles present in CF index
     md = md[md['book_title'].isin(book_to_idx)].drop_duplicates('book_title').set_index('book_title')
     if md.shape[0] == 0:
+        logger.info("No overlapping titles between book_metadata and CF index; skipping TF-IDF")
         return
 
     meta_titles_local = list(md.index)
@@ -208,6 +267,7 @@ def build_tfidf_on_metadata():
     globals()['meta_title_to_row'] = meta_title_to_row_local
     globals()['tfidf'] = tfidf_local
     globals()['tfidf_matrix'] = tfidf_matrix_local
+    logger.info("Built TF-IDF matrix for %d titles", len(meta_titles_local))
 
 def recommend_content(title: str, topn: int = 10):
     """Content-based recommendations using TF-IDF content matrix."""
@@ -228,8 +288,10 @@ def recommend_content(title: str, topn: int = 10):
 
 def hybrid_recommend(title: str, topn: int = 10, alpha: float = 0.6):
     """Blend CF and content recommendations (alpha weight to CF)."""
-    cf = dict(recommend_cf(title, topn=200))
-    con = dict(recommend_content(title, topn=200))
+    cf_list = recommend_cf(title, topn=200)
+    con_list = recommend_content(title, topn=200)
+    cf = dict(cf_list)
+    con = dict(con_list)
     candidates = set(cf.keys()) | set(con.keys())
     scored = []
     for c in candidates:
@@ -240,7 +302,9 @@ def hybrid_recommend(title: str, topn: int = 10, alpha: float = 0.6):
     scored = sorted(scored, key=lambda x: -x[1])[:topn]
     return scored
 
-# Robust metadata extraction
+# -------------------------
+# Metadata utilities
+# -------------------------
 def _safe_to_str(v):
     """Return simple string for scalar-like values; otherwise None."""
     if v is None:
@@ -254,7 +318,6 @@ def _safe_to_str(v):
     except Exception:
         pass
     if isinstance(v, dict):
-        # if dict has single scalar value, return it
         if len(v) == 1:
             single = next(iter(v.values()))
             if isinstance(single, (str, int, float, bool)):
@@ -296,7 +359,6 @@ def get_metadata_for_title(title: str):
                 'year_of_publication': _safe_to_str(md.get('year_of_publication') or md.get('year')),
                 'image_url_l': _safe_to_str(md.get('image_url_l') or md.get('image')),
             }
-        # if md is scalar
         if md is not None:
             return {'book_author': _safe_to_str(md)}
 
@@ -307,7 +369,6 @@ def get_metadata_for_title(title: str):
         # Try index-based lookup first
         try:
             if 'book_title' not in df.columns:
-                # index likely contains titles
                 if title in df.index:
                     row = df.loc[title]
             else:
@@ -318,7 +379,7 @@ def get_metadata_for_title(title: str):
             row = None
 
         if row is None:
-            # fallback: try where 'book_title' equals title even if column naming differs
+            # fallback: try where any column with 'title' in its name equals the title
             try:
                 possible_cols = [c for c in df.columns if 'title' in c.lower()]
                 for c in possible_cols:
@@ -332,7 +393,6 @@ def get_metadata_for_title(title: str):
         if row is None:
             return {}
 
-        # convert to dict-like and extract fields
         try:
             rdict = row.to_dict() if hasattr(row, "to_dict") else dict(row)
         except Exception:
@@ -350,25 +410,58 @@ def get_metadata_for_title(title: str):
 
     return {}
 
-# --- Startup ---
+# -------------------------
+# Startup / Shutdown events
+# -------------------------
+async def _initialize_all():
+    """
+    Helper to run the potentially-blocking initialization functions off the event loop.
+    """
+    # run safe_load_models and build_tfidf_on_metadata off the event loop to avoid blocking
+    await asyncio.to_thread(safe_load_models)
+    # build TF-IDF may use CPU; run in thread as well
+    await asyncio.to_thread(build_tfidf_on_metadata)
+
 @app.on_event("startup")
-def startup():
+async def startup_event():
+    logger.info("Startup: beginning model initialization")
+    # set a default so endpoints can check quickly
+    app.state.model_loaded = False
     try:
-        safe_load_models()
-        build_tfidf_on_metadata()
+        await _initialize_all()
         app.state.model_loaded = True
-        print("Model loaded. #books:", len(book_to_idx))
-    except Exception as e:
-        app.state_model_loaded = False
-        print("Failed to load model:", str(e))
+        try:
+            count = len(book_to_idx)
+        except Exception:
+            count = 0
+        logger.info("Model loaded successfully. #books: %d", count)
+    except Exception as exc:
+        app.state.model_loaded = False
+        logger.exception("Failed to initialize models during startup: %s", exc)
         traceback.print_exc()
 
-# --- Healthcheck ---
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("Shutdown: cleaning up resources")
+    # If you have GPU or other resources to free, do it here.
+    # For example, if you stored a big model in app.state.model_ref, release it.
+    # We keep this simple for now.
+    await asyncio.sleep(0)
+
+# -------------------------
+# Healthcheck
+# -------------------------
 @app.get("/healthz")
 def healthz():
-    return {"status": "ok", "model_loaded": bool(getattr(app.state, "model_loaded", False))}
+    return {
+        "status": "ok",
+        "model_loaded": bool(getattr(app.state, "model_loaded", False)),
+        "num_books_indexed": len(book_to_idx) if book_to_idx else 0
+    }
 
-# Debug endpoint (temporary)
+# -------------------------
+# Debug metadata endpoint
+# -------------------------
 @app.get("/_debug_metadata")
 def debug_metadata(sample_title: Optional[str] = None):
     t = sample_title or (next(iter(book_to_idx.keys())) if book_to_idx else None)
@@ -390,7 +483,9 @@ def debug_metadata(sample_title: Optional[str] = None):
         "sample_value": sample_value
     }
 
-# --- Recommend endpoint (fuzzy + hybrid fallback) ---
+# -------------------------
+# Recommend endpoint
+# -------------------------
 @app.get("/recommend", response_model=RecommendResponse)
 def recommend(
     book_title: str = Query(..., description="Book title (exact or close)"),
@@ -421,3 +516,10 @@ def recommend(
         ))
 
     return RecommendResponse(query=book_title, matched_title=matched, recommendations=out)
+
+# -------------------------
+# Run with uvicorn when executed directly
+# -------------------------
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.app:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)), reload=True)
