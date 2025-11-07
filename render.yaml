@@ -1,0 +1,20 @@
+# render.yaml
+services:
+  - type: web
+    name: what-else-should-i-read
+    env: docker
+    plan: starter
+    repo: https://github.com/saricmilos/what-else-should-I-read
+    branch: main
+    autoDeploy: true
+    envVars:
+      - key: MODEL_DIR
+        value: /app/models
+      - key: MODEL_FILE
+        value: book_item_model.pkl
+      - key: NN_FILE
+        value: nn_index.pkl
+      - key: PORT
+        value: "10000"
+      - key: CORS_ORIGINS
+        value: https://saricmilos.com

@@ -1,28 +1,37 @@
-# Step 1: Base image
-FROM python:3.11
+# Dockerfile - use python:3.11-slim so binary wheels for scipy/numpy are available
+FROM python:3.11-slim
 
-# Step 2: Set working directory inside the container
+ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /app
 
-# Step 3: Install system dependencies for building Python packages
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    g++ \
-    libffi-dev \
-    libssl-dev \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      gcc \
+      gfortran \
+      pkg-config \
+      libblas-dev \
+      liblapack-dev \
+      libopenblas-dev \
+      libffi-dev \
+      libssl-dev \
+      ca-certificates \
+      curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Step 4: Copy all project files into the container
-COPY . /app
+COPY app/ ./app
+COPY models/ ./models
 
-# Step 5: Upgrade pip and install dependencies
-RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+# upgrade pip/setuptools/wheel so pip prefers wheels
+RUN python -m pip install --upgrade pip setuptools wheel
 
-# Step 6: Expose the port FastAPI will run on
-EXPOSE 8000
+COPY app/requirements.txt ./app/requirements.txt
+RUN pip install --no-cache-dir -r app/requirements.txt
 
-# Step 7: Command to run your FastAPI app
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV MODEL_DIR=/app/models
+ENV MODEL_FILE=book_item_model.pkl
+ENV NN_FILE=nn_index.pkl
+ENV PORT=10000
+
+EXPOSE ${PORT}
+CMD ["uvicorn", "app.app:app", "--host", "0.0.0.0", "--port", "10000", "--workers", "1"]

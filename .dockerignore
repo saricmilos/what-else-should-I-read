@@ -1,0 +1,7 @@
+__pycache__
+*.pyc
+.env
+.git
+.gitignore
+*.ipynb
+models/*.pkl  # optionally exclude large models from docker context if you plan to fetch them at startup
