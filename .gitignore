@@ -1,0 +1,31 @@
+# Ignore Python virtual environments
+venv/
+venv_books/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS & Windows system files
+.DS_Store
+Thumbs.db
+
+# Environment and IDE settings
+.env
+.idea/
+.vscode/
+
+# Model and cache files
+models/*.pkl
+*.joblib
+*.h5
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Docker artifacts
+*.log
+*.pid
+*.tar
+*.sock
