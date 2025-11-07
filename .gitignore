@@ -16,11 +16,6 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Model and cache files
-models/*.pkl
-*.joblib
-*.h5
-
 # Jupyter notebook checkpoints
 .ipynb_checkpoints/
 
@@ -29,3 +24,13 @@ models/*.pkl
 *.pid
 *.tar
 *.sock
+
+# Photos
+*.png
+*.jpg
+
+# Latex
+*.fls
+*.fdb_latexmk
+*.aux
+*.synctex.gz
