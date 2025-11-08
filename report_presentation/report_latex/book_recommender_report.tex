@@ -1,35 +1,456 @@
 % Author: Milos A. Saric, copyright 2025. https://saricmilos.com/
 
-\title{
-\Large Book Recommender  \\
-[10pt] 
-}
+\title{Book Recommendation System --- Collaborative Filtering \& Content-Based Approaches}
 \date{\today}
 \author{Milos Saric}
-
- \maketitle
+\maketitle
 
 % --------------- ABSTRACT
 \begin{abstract}
-    TEST
+This report investigates the Kaggle Book Recommendation dataset to develop intelligent book recommendation systems using both
+collaborative filtering and content-based methods. A key application of machine learning is generating personalized recommendations
+for users, aiming to boost revenue, engagement, or other performance metrics. As a result, understanding how these recommendation
+algorithms work is an essential skill for anyone aspiring to become a Machine Learning Engineer.
+Recommender systems have become a vital component of online platforms such
+as YouTube, Amazon, and Netflix, helping users discover content tailored to their preferences. By analyzing user behavior and
+item attributes, these systems predict user interests, enhancing user experience while driving engagement and revenue. 
+This study highlights the implementation, advantages, and practical significance of recommendation algorithms in modern
+digital platforms.
 \end{abstract}
 
 \rule{\linewidth}{0.5pt}
 
+\section{Introduction and Problem Definition}
+
+Recommender systems aim to predict user preferences and suggest items they are most likely to enjoy. This project focuses on developing a \textbf{book recommendation system} using the Kaggle \textbf{Book-Crossing Dataset}, leveraging both \textbf{collaborative filtering} and \textbf{content-based approaches} to deliver personalized book suggestions.
+The goal is to design a system that accurately predicts and recommends books a user is likely to enjoy based on past interactions, ratings, and preferences. A clear understanding of this problem ensures that all subsequent analysis and modeling efforts align with the primary objective.
 
 
-\section{Introduction}
+\begin{center}
+\begin{tikzpicture}[node distance=2cm, every node/.style={rectangle, draw, minimum width=3.5cm, minimum height=1cm, align=center}]
+    % Nodes
+    \node (RS) {Recommender Systems};
+    \node (CF) [below left of=RS, xshift=-3cm] {Collaborative Filtering};
+    \node (CB) [below of=RS] {Content-Based Filtering};
+    \node (Hybrid) [below right of=RS, xshift=3cm] {Hybrid Filtering};
+    \node (User) [below left of=CF, xshift=-1.5cm, yshift=-0.5cm] {User-Based};
+    \node (Item) [below right of=CF, xshift=1.5cm, yshift=-0.5cm] {Item-Based};
 
-TEST
+    % Arrows
+    \draw[->, thick] (RS) -- (CF);
+    \draw[->, thick] (RS) -- (CB);
+    \draw[->, thick] (RS) -- (Hybrid);
+    \draw[->, thick] (CF) -- (User);
+    \draw[->, thick] (CF) -- (Item);
+\end{tikzpicture}
+\end{center}
 
-\section{Objectives}
+\subsection{Scope}
+The analysis focuses exclusively on the Kaggle dataset, which includes:  
+\begin{itemize}
+    \item \textbf{Users:} demographic and identification data.  
+    \item \textbf{Books:} metadata such as title, author, year, publisher, and cover images.  
+    \item \textbf{Ratings:} explicit ratings (1--10) and implicit feedback (0 for interactions without ratings).  
+\end{itemize}
+Predictions are restricted to this dataset without using external sources unless explicitly integrated in advanced phases.
 
-TEST
+\subsection{Stakeholders}
+\begin{itemize}
+    \item \textbf{Readers / Users:} receive personalized book recommendations.  
+    \item \textbf{Publishers / Authors:} gain insights into reader interests for better targeting.  
+    \item \textbf{Data Scientists / ML Practitioners:} test and optimize recommendation algorithms.  
+    \item \textbf{Platform Developers / Businesses:} improve user engagement, retention, and revenue through effective recommendations.
+\end{itemize}
 
 
-\section{Methodology}
+\section{Collaborative Filtering}
+Collaborative filtering creates a model based on a user's past actions—such as items they have purchased, selected, or
+rated, as well as the behavior of other users with similar preferences. This model is then used to recommend items or predict 
+ratings for items that the user is likely to be interested in.
+Collaborative filtering is a recommendation method that predicts a users preferences based on the choices of other users
+with similar tastes. It relies on both user and item information, often organized in a user-item matrix.
 
-TEST
+This approach is widely used in industry across platforms like YouTube, Netflix, Amazon, and Medium. 
+For example, if users with similar demographics buy a product on Amazon, the system can suggest that same product to you.
+YouTube leverages this technique to recommend videos, Medium uses it to suggest articles, and Netflix relies heavily on
+collaborative filtering to personalize movie recommendations.
+
+\begin{center}
+\begin{tikzpicture}[node distance=2.5cm, every node/.style={rectangle, draw, minimum width=2.5cm, minimum height=1cm, align=center}]
+
+    % Users
+    \node (User1) {User 1};
+    \node (User2) [right=6cm of User1] {User 2};
+
+    % Similarity label node
+    \node[draw=none, fill=none] (SimilarLabel) [above=0.3cm of $(User1)!0.5!(User2)$] {similar};
+    \draw[<->, thick] (User1) -- (User2);
+
+    % Books for User1
+    \node (Book1) [below=3cm of User1, xshift=-1.5cm] {1984};
+    \node (Book2) [below=3cm of User1, xshift=1.5cm] {Steve Jobs};
+
+    % Books for User2
+    \node (Book3) [below=3cm of User2, xshift=-2.0cm] {1984};
+    \node (Book4) [below=3cm of User2] {Steve Jobs};
+    \node (Book5) [below=3cm of User2, xshift=2.0cm] {Stiff};
+
+    % Arrows from User1 to books
+    \draw[->, thick] (User1) -- (Book1);
+    \draw[->, thick] (User1) -- (Book2);
+
+    % Arrows from User2 to books
+    \draw[->, thick] (User2) -- (Book3);
+    \draw[->, thick] (User2) -- (Book4);
+    \draw[->, thick] (User2) -- (Book5);
+
+    % Recommendation arrow from Book5 to User1
+    \node[draw=none, fill=none] (RecLabel) [right=1cm of Book5.north east] {recommend};
+    \draw[->, thick, red] (Book5.north) -- ++(0,1) -| (User1.south);
+
+\end{tikzpicture}
+\end{center}
+
+\begin{figure}[H]
+    \centering
+    % Left image
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/collaborative_filter.PNG}
+        \caption{User Based Collaborative Filtering}
+        \label{fig:collaborative_filtering}
+    \end{subfigure}
+    \hfill
+    % Right image
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/user_item_based.PNG}
+        \caption{User and Item Based Collaborative Filtering}
+        \label{fig:user_item_based}
+    \end{subfigure}
+    
+    \caption{Comparison of Collaborative Filtering Approaches}
+    \label{fig:collab_side_by_side}
+\end{figure}
+
+In our book recommendation system, we begin by constructing a matrix with users as rows and books (identified by ISBN) as columns—let’s call this the user–book matrix.
+
+Each entry in the matrix represents either a rating from 1 to 10, indicating that the user has read and rated the book,
+or a zero if the user has not interacted with that book. For example, if user J has rated book K, the corresponding cell
+contains that rating. If user J has not read or rated book K, the cell is simply zero.
+
+\subsection{User-Based Collaborative Filtering}
+
+User-based collaborative filtering recommends items to a user by identifying other users with similar preferences. If a similar user liked an item, it can be suggested. Similarity between users can be measured using metrics such as \textbf{Cosine similarity}, \textbf{Pearson correlation}, or \textbf{Euclidean distance}.
+
+The predicted rating $\hat{r}_{u,i}$ of user $u$ for item $i$ can be calculated as:
+
+\begin{equation}
+\hat{r}_{u,i} = \frac{\sum_{v \in N(u)} s(u,v) \cdot r_{v,i}}{\sum_{v \in N(u)} |s(u,v)|}
+\end{equation}
+
+where:  
+\begin{itemize}
+    \item $N(u)$ is the set of users similar to user $u$,  
+    \item $s(u,v)$ is the similarity between users $u$ and $v$,  
+    \item $r_{v,i}$ is the rating given by user $v$ to item $i$.  
+\end{itemize}
+
+In short, the predicted rating is a weighted average of ratings from similar users, with weights determined by user similarity.
+
+\subsection{Item-Based Collaborative Filtering}
+
+Item-based collaborative filtering recommends items by analyzing their similarity based on user interactions. 
+In other words, if two items receive similar ratings from many users, they are considered similar. 
+For instance, Amazon can suggest a product based on items with similar user ratings,
+Netflix can recommend a movie or Goodreads can recommend an book based on other books with similar engagement patterns.
+
+To compute the similarity between items, we often use metrics such as \textbf{Cosine similarity}, applied to the user-item matrix along the item dimension. Once the item-item similarity matrix is created, the predicted rating $\hat{r}_{u,i}$ for user $u$ on item $i$ can be computed as:
+
+\begin{equation}
+\hat{r}_{u,i} = \frac{\sum_{j \in N(i)} s(i,j) \cdot r_{u,j}}{\sum_{j \in N(i)} |s(i,j)|}
+\end{equation}
+
+where:  
+\begin{itemize}
+    \item $N(i)$ is the set of items similar to item $i$,  
+    \item $s(i,j)$ is the similarity between items $i$ and $j$,  
+    \item $r_{u,j}$ is the rating of user $u$ for item $j$.  
+\end{itemize}
+
+This formula is analogous to user-based collaborative filtering, but here the weights come from item-item similarity instead of user-user similarity.  
+
+The quality of predictions can be evaluated using metrics like \textbf{Mean Squared Error (MSE)} or other regression metrics.
+
+\subsection{Comparison of User-Based and Item-Based Collaborative Filtering}
+
+User-item matrices are typically very sparse, meaning that most users interact with only a small fraction of available items. This sparsity affects both computational complexity and recommendation behavior.
+
+\subsubsection{User-Based Filtering}
+User-based collaborative filtering can offer more diverse recommendations because it focuses on similarities between users rather than items. For example, if user X likes an item that user J has never seen, user J may still receive a recommendation for that item if their overall preferences are similar. The main drawback is computational cost: calculating the K nearest neighbors for each user can be expensive.
+
+\subsubsection{Item-Based Filtering}
+Item-based filtering often seems more computationally intensive, but much of the work can be done offline. Specifically, the item–item similarity matrix can be precomputed because items change less frequently than users. This reduces repeated calculations but can lead to less diverse recommendations, as items similar to those already liked are more likely to be suggested.
+
+\subsection{Data Dependency and Model Adaptation}
+
+Collaborative filtering relies heavily on user data. As users continue to browse, purchase, and rate products, their preferences evolve over time. Because of this, the underlying recommendation model must be regularly updated and refined to stay accurate and relevant. In practice, this means continuously integrating new data and adjusting the system to reflect changing user behavior and market trends.
+
+The two main sources of data for collaborative filtering are:
+
+\begin{itemize}
+    \item \textbf{Explicit data:} Information that users actively provide, such as ratings, reviews, or responses to surveys and questionnaires.
+    \item \textbf{Implicit data:} Information inferred from user behavior, including browsing history, clicks, time spent on content, likes, shares, and other engagement signals.
+\end{itemize}
+
+Both types of data are essential for understanding user preferences. Explicit ratings capture direct feedback, while implicit data reveals natural behavioral patterns that help improve recommendation accuracy over time.
+
+\section{Content Based Filtering}
+
+
+Content-based filtering is one of the two primary approaches in recommender systems.  
+It generates recommendations by analyzing the features of items and matching them to a user's preferences. Essentially, the system compares a \textbf{user profile} with an \textbf{item profile} to predict which items the user is likely to engage with.
+Content-Based Recommender Systems (CBRSs) often build a personalized model for each user. The process begins by collecting the features of items the user has interacted with—this forms the user profile. These items serve as a training set for a user-specific classifier or regression model. 
+
+In the model, the item features act as independent variables, while the user's past behavior-such as ratings, likes, 
+or purchases—serves as the dependent variable. Once trained, the model predicts the user's likely response to new items, 
+allowing the system to recommend items that align with the user's preferences.
+The \textbf{item profile} captures the characteristics of an item, including structured features or descriptive metadata. For example, a streaming service may represent movies using attributes such as genre, director, release year, or cast.  
+
+The \textbf{user profile} reflects the individual's preferences and past behavior. It is typically built from items the user has previously interacted with, including ratings, likes, dislikes, searches, or other engagement data.  
+
+Content-based recommender systems often incorporate machine learning and data science techniques to improve prediction accuracy, enabling the recommendation of new items that match the user’s interests.  
+In short, this approach focuses on \textit{what the user likes}, rather than what other users like.
+
+\subsection{Item Representations in Content-Based Filtering}
+
+In content-based filtering, items and users are often represented as vectors in a multi-dimensional feature space. Each item's feature—such as genre, author, or other metadata—define its coordinates. Boolean values (1 for presence, 0 for absence) are commonly used to indicate whether an item possesses a particular feature.
+
+\textbf{Example:} A few novels represented by three genres (Adventure, Bildungsroman, Children):
+
+\begin{table}[H]
+\centering
+\caption{Boolean Feature Representation of Novels}
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Novel} & \textbf{Adventure} & \textbf{Bildungsroman} & \textbf{Children} \\
+\hline
+Little Women & 0 & 1 & 1 \\
+Northanger Abbey & 0 & 1 & 0 \\
+Peter Pan & 1 & 0 & 1 \\
+Treasure Island & 1 & 0 & 1 \\
+\hline
+\end{tabular}
+\end{table}
+
+In this 3D vector space, each dimension corresponds to a feature (Adventure, Bildungsroman, Children). A novel’s coordinates are determined by its Boolean values. For example:
+
+\begin{itemize}
+    \item \textit{Little Women:} (0,1,1)  
+    \item \textit{Northanger Abbey:} (0,1,0)  
+    \item \textit{Peter Pan:} (1,0,1)  
+    \item \textit{Treasure Island:} (1,0,1)  
+\end{itemize}
+
+% Set up 3D coordinates
+\tdplotsetmaincoords{70}{120} % Adjust viewing angle
+
+\begin{center}
+\begin{tikzpicture}[scale=3,tdplot_main_coords]
+    % Axes
+    \draw[->] (0,0,0) -- (1.5,0,0) node[anchor=north east] {Bildungsroman (X)};
+    \draw[->] (0,0,0) -- (0,1.5,0) node[anchor=south west] {Adventure (Y)};
+    \draw[->] (0,0,0) -- (0,0,1.5) node[anchor=south] {Children's Literature (Z)};
+    
+    % Plot novels
+    \coordinate (LW) at (0,1,1);
+    \coordinate (NA) at (0,1,0);
+    \coordinate (PP) at (1,0,1);
+    \coordinate (TI) at (1,0,1);
+    
+    % Draw points
+    \filldraw[red] (LW) circle (0.03) node[above right] {Little Women};
+    \filldraw[blue] (NA) circle (0.03) node[below right] {Northanger Abbey};
+    \filldraw[green] (PP) circle (0.03) node[above left] {Peter Pan};
+    \filldraw[orange] (TI) circle (0.03) node[below left] {Treasure Island};
+    
+    % Optional: dashed lines to axes for clarity
+    \draw[dashed, gray] (LW) -- (0,1,0) -- (0,0,0);
+    \draw[dashed, gray] (NA) -- (0,0,0);
+    \draw[dashed, gray] (PP) -- (1,0,0) -- (0,0,0);
+    \draw[dashed, gray] (TI) -- (1,0,0) -- (0,0,0);
+\end{tikzpicture}
+\end{center}
+
+The closer two novels are in this space, the more similar they are according to the selected features. For instance,
+ \textit{Peter Pan} and \textit{Treasure Island} overlap completely, while \textit{Little Women} is closer to
+  \textit{Northanger Abbey} than to the adventure novels.  Since Peter Pan and Treasure Island are very similar in the feature space,
+   a user who has previously purchased Peter Pan is likely to be recommended Treasure Island, as it closely matches their interests.
+
+\textbf{Visualization:} We can plot these items in a 3D Cartesian coordinate system, with each axis representing one genre. Novel vectors are points in this space, and proximity reflects similarity. Adding more features (e.g., Fantasy, Gothic) increases the dimensionality, adjusting item positions accordingly.
+
+\subsection{Similarity Metrics}
+
+\subsubsection{Cosine Similarity}
+
+In content-based filtering, the system determines how similar two items are by comparing their feature representations in the vector space. Items that are closer together are considered more alike, and this similarity can be measured using various metrics.
+
+One of the most common methods, especially for high-dimensional feature spaces, is \textbf{Cosine Similarity}. Cosine similarity measures the angle between two vectors, giving a value between -1 and 1. The closer the value is to 1, the more similar the items are considered. 
+
+The formula for cosine similarity between two item vectors $\mathbf{x}$ and $\mathbf{y}$ is:
+
+\begin{equation}
+\text{sim}(\mathbf{x}, \mathbf{y}) = \frac{\mathbf{x} \cdot \mathbf{y}}{\|\mathbf{x}\| \, \|\mathbf{y}\|} 
+= \frac{\sum_{i=1}^{n} x_i y_i}{\sqrt{\sum_{i=1}^{n} x_i^2} \; \sqrt{\sum_{i=1}^{n} y_i^2}}
+\end{equation}
+
+Here, $\mathbf{x} \cdot \mathbf{y}$ represents the dot product of the two vectors, and $\|\mathbf{x}\|$ and $\|\mathbf{y}\|$ are the magnitudes (lengths) of the vectors. This metric allows the system to quantify similarity between items and recommend those that are most closely aligned with the user's previous preferences.
+
+where $\mathbf{x}$ and $\mathbf{y}$ are vectors, for example, item feature vectors in a recommendation system.  
+
+\begin{itemize}
+    \item The \textbf{dot product} $\mathbf{x} \cdot \mathbf{y}$ quantifies how much the two vectors point in the same direction.
+    \item The \textbf{norms} $\|\mathbf{x}\|$ and $\|\mathbf{y}\|$ normalize the vectors by their lengths.
+\end{itemize}
+
+The result ranges from $-1$ to $1$, where values closer to $1$ indicate highly similar items, and values near $0$ indicate little similarity.  
+
+Cosine similarity can be understood geometrically as the cosine of the angle $\theta$ between two vectors:
+
+\begin{equation}
+\text{sim}(\mathbf{x}, \mathbf{y}) = \cos \theta
+\end{equation}
+
+\begin{center}
+\begin{tikzpicture}[scale=2]
+    % Draw axes
+    \draw[->] (0,0) -- (2,0) node[right] {$x$};
+    \draw[->] (0,0) -- (0,2) node[above] {$y$};
+
+    % Draw vectors
+    \draw[->, thick, blue] (0,0) -- (1.5,1) node[midway, above] {$\mathbf{x}$};
+    \draw[->, thick, red] (0,0) -- (1,1.5) node[midway, left] {$\mathbf{y}$};
+
+    % Draw angle theta
+    \draw (0.5,0) arc (0:34.99:0.5);
+    \node at (0.6,0.1) {$\theta$};
+
+    % Labels for origin
+    \node at (-0.1,-0.1) {0};
+\end{tikzpicture}
+\end{center}
+
+Here, $\theta$ is the angle between vectors $\mathbf{x}$ and $\mathbf{y}$. Cosine similarity measures how aligned these vectors are: the smaller the angle, the closer the similarity is to 1.
+
+\textbf{Intuition:} Cosine similarity focuses on the direction of vectors rather than their magnitude. Two items with similar feature patterns
+ are considered similar, even if one has generally higher values than the other.
+
+\subsubsection{Euclidean Distance}
+
+Euclidean distance is a way to measure how far apart two vectors are in a multidimensional space. It is calculated as the straight-line distance connecting the two points. In the context of a recommendation system, the smaller the Euclidean distance between two item vectors, the more similar the items are considered.
+
+Mathematically, for two vectors $\mathbf{x} = (x_1, x_2, \dots, x_n)$ and $\mathbf{y} = (y_1, y_2, \dots, y_n)$, the Euclidean distance is given by:
+
+\begin{equation}
+d(\mathbf{x}, \mathbf{y}) = \sqrt{\sum_{i=1}^{n} (x_i - y_i)^2}
+\end{equation}
+
+Here, $n$ is the number of features in each vector, and $x_i$, $y_i$ are the corresponding feature values of $\mathbf{x}$ and $\mathbf{y}$.
+
+\begin{center}
+\begin{tikzpicture}[scale=2]
+    % Axes
+    \draw[->] (0,0) -- (4,0) node[right] {$x_1$};
+    \draw[->] (0,0) -- (0,4) node[above] {$x_2$};
+
+    % Points
+    \coordinate (X) at (1.5,2.5);
+    \coordinate (Y) at (3,1);
+
+    % Draw vectors
+    \filldraw[blue] (X) circle (2pt) node[above left] {$\mathbf{x}$};
+    \filldraw[red] (Y) circle (2pt) node[below right] {$\mathbf{y}$};
+
+    % Draw distance line
+    \draw[dashed, thick] (X) -- (Y) node[midway, above, sloped] {$d(\mathbf{x},\mathbf{y})$};
+
+    % Optional: draw lines to axes for clarity
+    \draw[dotted, gray] (X) -- (X|-0,0) -- (0,0);
+    \draw[dotted, gray] (Y) -- (Y|-0,0) -- (0,0);
+\end{tikzpicture}
+\end{center}
+
+\subsection{Item-Based Collaborative Filtering vs. Content-Based Filtering}
+
+Although both methods aim to recommend items similar to those a user already liked, they differ in what information they rely on and how they define similarity.
+
+\textbf{Item-Based Collaborative Filtering (CF)} focuses on \textit{user behavior patterns}.  
+Items are considered similar if many users have interacted with both of them in similar ways.  
+For example, if several users who bought \textit{Book A} also bought \textit{Book B}, the system concludes that these two books are related, even if their topics are entirely different.  
+This method depends on user ratings or implicit feedback (such as clicks or purchases) to measure similarity between items.  
+In essence, the approach follows the idea: \textit{``Users who liked this item also liked that item.''}
+
+\textbf{Content-Based Filtering (CBF)}, on the other hand, focuses on \textit{the characteristics of the items themselves}.  
+It recommends new items similar to those the same user has already liked, based on item features such as genre, keywords, author, or description.  
+For instance, if a user enjoys a mystery novel with a strong female lead, the system suggests other mystery novels with similar themes or features.  
+The guiding principle is: \textit{``You liked this because of its content, so you might like similar content.''}
+
+\subsection{Advantages and Disadvantages of Collaborative and Content-Based Filtering}
+
+\textbf{Collaborative Filtering:}  
+\textbf{Advantages:} Collaborative filtering can uncover new items that a user may not have considered before by leveraging the preferences of similar users. This allows for more diverse recommendations that go beyond the user’s past interactions.  
+
+\textbf{Disadvantages:} Collaborative filtering suffers from the \textit{cold-start problem}. New users have no interaction history, making it difficult to find similar users, and new items lack sufficient ratings to be recommended effectively. Additionally, calculating similarities between users can be computationally expensive for large datasets.
+
+\textbf{Content-Based Filtering:}  
+\textbf{Advantages:} Content-based filtering handles new items efficiently, as recommendations rely on item features rather than prior user interactions. It also provides greater transparency, explaining why a particular item is recommended. For example, a movie may be suggested because it shares the same genre or actors as previously liked movies, allowing users to make informed decisions.  
+
+\textbf{Disadvantages:} Content-based filtering is limited by the features available to describe items. If a user’s preference is based on characteristics not captured in the item profile (e.g., specific plot elements or production details), the system may fail to provide relevant recommendations. Moreover, it tends to overspecialize, suggesting items very similar to those already liked, which reduces diversity and limits discovery of new or unexpected items.
+
+
+\section{Summary of Content-Based and Collaborative Filtering Approaches}
+
+Recommendation systems primarily rely on two major approaches: \textbf{Content-Based Filtering} and \textbf{Collaborative Filtering}.  
+Although both aim to predict what a user will like next, they differ in how they determine similarity and generate recommendations.
+
+\subsection{Content-Based Filtering}
+
+Content-Based Filtering recommends items that are \textit{similar to those a user has previously liked}.  
+It relies on the features or attributes of the items, such as movie genre, product category, author, or keywords.  
+The system first builds a user profile based on the characteristics of items the user interacted with, then suggests other items with similar properties.  
+
+\textbf{Example:}  
+If a user enjoys a science fiction movie featuring space and robots, the system may recommend other sci-fi movies with similar themes.
+
+\begin{itemize}
+    \item Focuses on the \textbf{content or attributes} of items.
+    \item Learns from the user’s own past preferences.
+    \item Works well even when few other users exist.
+\end{itemize}
+
+\subsection{Collaborative Filtering}
+
+Collaborative Filtering, on the other hand, recommends items based on the behavior and preferences of \textit{other users}.  
+It assumes that users who agreed in the past will continue to share similar interests in the future.
+
+\textbf{Example:}  
+If two users both liked the movie \textit{Gifted}, and one of them later enjoyed \textit{Sinister}, the system might recommend \textit{Sinister} to the other user as well.
+
+\begin{itemize}
+    \item Focuses on \textbf{user interactions and ratings}.
+    \item Learns from the collective preferences of many users.
+    \item Does not rely on item features.
+\end{itemize}
+
+Collaborative Filtering is generally divided into two subtypes:
+\begin{enumerate}
+    \item \textbf{User-User Filtering:} Finds users with similar tastes and recommends what they liked.
+    \item \textbf{Item-Item Filtering:} Recommends items similar to those the user liked, based on other users’ interactions.
+\end{enumerate}
+
+In summary, \textbf{content-based filtering} focuses on the \textit{features of items}, while \textbf{collaborative filtering} focuses on the \textit{relationships between users and items}.  
+Modern recommender systems often combine both techniques to create more accurate and personalized \textbf{hybrid models}.
+
 
 \section{Results}
 
