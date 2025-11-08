@@ -111,6 +111,102 @@ collaborative filtering to personalize movie recommendations.
 \end{tikzpicture}
 \end{center}
 
+\begin{tikzpicture}[
+    user/.style={rectangle, draw=none, fill=cyan!20, rounded corners, minimum width=1.6cm, minimum height=0.7cm, align=center},
+    item/.style={rectangle, draw=none, fill=green!20, rounded corners, minimum width=1.6cm, minimum height=0.7cm, align=center},
+    like/.style={-{Stealth}, thick},
+    recommend/.style={-{Stealth}, thick, dashed, red},
+    every node/.style={font=\small}
+]
+
+% Users
+\node[user] (A) {User A};
+\node[user, below=0.8cm of A] (B) {User B};
+\node[user, below=0.8cm of B] (C) {User C};
+
+% Items
+\node[item, right=3.5cm of A] (IA) {item A};
+\node[item, below=0.8cm of IA] (IB) {item B};
+\node[item, below=0.8cm of IB] (IC) {item C};
+\node[item, below=0.8cm of IC] (ID) {item D};
+
+% Similarity label
+\draw[-{Stealth}, thick] ($(A.west)+(-0.7,0)$) -- ++(0,-1.6) node[midway,left]{Similar};
+
+% Like arrows (solid)
+\draw[like] (A) -- (IA);
+\draw[like] (A) -- (IB);
+\draw[like] (B) -- (IB);
+\draw[like] (B) -- (IC);
+\draw[like] (C) -- (IC);
+\draw[like] (C) -- (ID);
+
+% Recommend arrows (dashed red)
+\draw[recommend] (A) -- (IC);
+\draw[recommend] (A) -- (ID);
+
+% Legend
+\node[above=0.5cm of A, align=left] (legend) {
+\begin{tabular}{@{}ll@{}}
+\raisebox{0.5ex}{\tikz{\draw[like] (0,0)--(0.6,0);}} & like \\
+\raisebox{0.5ex}{\tikz{\draw[recommend] (0,0)--(0.6,0);}} & recommend
+\end{tabular}
+};
+
+% Caption
+\node[below=0.8cm of C] {\textbf{User-Based CF}};
+
+\end{tikzpicture}
+
+
+\begin{tikzpicture}[
+    user/.style={rectangle, draw=none, fill=cyan!20, rounded corners, minimum width=1.6cm, minimum height=0.7cm, align=center},
+    item/.style={rectangle, draw=none, fill=green!20, rounded corners, minimum width=1.6cm, minimum height=0.7cm, align=center},
+    like/.style={-{Stealth}, thick},
+    recommend/.style={-{Stealth}, thick, dashed, red},
+    every node/.style={font=\small}
+]
+
+% Users
+\node[user] (A) {User A};
+\node[user, below=0.8cm of A] (B) {User B};
+\node[user, below=0.8cm of B] (C) {User C};
+
+% Items
+\node[item, right=3.5cm of A] (IA) {item A};
+\node[item, below=0.8cm of IA] (IB) {item B};
+\node[item, below=0.8cm of IB] (IC) {item C};
+\node[item, below=0.8cm of IC] (ID) {item D};
+
+% Like arrows (solid)
+\draw[like] (A) -- (IA);
+\draw[like] (A) -- (IB);
+\draw[like] (B) -- (IB);
+\draw[like] (B) -- (IC);
+\draw[like] (C) -- (IC);
+
+% Recommend arrow (dashed red)
+\draw[recommend] (C) -- (ID);
+
+% Similarity between items (right side)
+\draw[-{Stealth}, thick] (IA.east) -- ++(0.7,-2.4) node[midway,right]{Similar};
+
+% Similarity arrow connecting items
+\draw[like] (ID.east) -- ++(0.7,2.4);
+
+% Legend
+\node[above=0.5cm of A, align=left] (legend) {
+\begin{tabular}{@{}ll@{}}
+\raisebox{0.5ex}{\tikz{\draw[like] (0,0)--(0.6,0);}} & like \\
+\raisebox{0.5ex}{\tikz{\draw[recommend] (0,0)--(0.6,0);}} & recommend
+\end{tabular}
+};
+
+% Caption
+\node[below=0.8cm of C] {\textbf{item-Based CF}};
+
+\end{tikzpicture}
+
 \begin{figure}[H]
     \centering
     % Left image
@@ -141,7 +237,11 @@ contains that rating. If user J has not read or rated book K, the cell is simply
 
 \subsection{User-Based Collaborative Filtering}
 
-User-based collaborative filtering recommends items to a user by identifying other users with similar preferences. If a similar user liked an item, it can be suggested. Similarity between users can be measured using metrics such as \textbf{Cosine similarity}, \textbf{Pearson correlation}, or \textbf{Euclidean distance}.
+User-based collaborative filtering recommends items to a user by identifying other users with similar preferences. If a similar user liked an item, it can be suggested. 
+
+\subsubsection{Cosine similarity with top-K neighbors}
+
+Similarity between users can be measured using metrics such as \textbf{Cosine similarity}, \textbf{Pearson correlation}, or \textbf{Euclidean distance}.
 
 The predicted rating $\hat{r}_{u,i}$ of user $u$ for item $i$ can be calculated as:
 
@@ -157,6 +257,225 @@ where:
 \end{itemize}
 
 In short, the predicted rating is a weighted average of ratings from similar users, with weights determined by user similarity.
+
+User-based collaborative filtering predicts a user's rating for an item based on the ratings of similar users. The steps are:
+
+\begin{enumerate}
+    \item Represent each user as a vector in item space:
+    \[
+    \mathbf{u}_i = [r_{i1}, r_{i2}, r_{i3}, \dots, r_{iM}]
+    \]
+    where \(r_{ij}\) is the rating of user \(i\) for item \(j\), and \(M\) is the number of items.
+    
+    \item Compute user-user similarity, e.g., using \textbf{cosine similarity}:
+    \begin{equation}
+    \text{sim}(u, v) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\| \, \|\mathbf{v}\|}
+    \end{equation}
+    where \(\mathbf{u} \cdot \mathbf{v}\) is the dot product, and \(\|\mathbf{u}\|\) is the Euclidean norm:
+    \begin{equation}
+    \|\mathbf{u}\| = \sqrt{\sum_{j=1}^{M} r_{uj}^2}
+    \end{equation}
+    
+    \item Predict ratings for a user \(u\) on item \(i\) using top-K similar users \(N(u)\):
+    \begin{equation}
+    \hat{r}_{ui} = \bar{r}_u + \frac{\sum_{v \in N(u)} \text{sim}(u,v) (r_{vi} - \bar{r}_v)}{\sum_{v \in N(u)} |\text{sim}(u,v)|}
+    \end{equation}
+    where \(\bar{r}_u\) is the mean rating of user \(u\).
+\end{enumerate}
+
+\subsection*{Intuition of Cosine Similarity}
+
+\begin{itemize}
+    \item Each user is a vector in \(M\)-dimensional space, where each axis represents an item.
+    \item The length of the vector corresponds to the magnitude of their ratings.
+    \item Cosine similarity measures the \textbf{angle between user vectors}, i.e., the similarity in rating patterns.
+    \item Example:
+
+\[
+\text{User A} = [5, 3, 0], \quad
+\text{User B} = [4, 2, 0]
+\]
+
+Even though User B gives slightly lower ratings, the \textit{pattern is similar}, resulting in a high cosine similarity.
+\end{itemize}
+
+
+
+\tdplotsetmaincoords{60}{120}
+\begin{center}
+\begin{tikzpicture}[tdplot_main_coords, scale=2]
+
+% Draw axes
+\draw[->] (0,0,0) -- (1.2,0,0) node[anchor=north east]{$\text{Item 1}$};
+\draw[->] (0,0,0) -- (0,1.2,0) node[anchor=north west]{$\text{Item 2}$};
+\draw[->] (0,0,0) -- (0,0,1.2) node[anchor=south]{$\text{Item 3}$};
+
+% Draw user vectors
+\draw[->, thick, blue] (0,0,0) -- (1,0.6,0) node[midway, above] {User A};
+\draw[->, thick, red] (0,0,0) -- (0.8,0.4,0) node[midway, above right] {User B};
+\draw[->, thick, green] (0,0,0) -- (0.2,1,0.6) node[midway, right] {User C};
+
+% Optionally draw angle between A and B
+\draw[dashed] (0,0,0) -- (1,0.6,0);
+\draw[dashed] (0,0,0) -- (0.8,0.4,0);
+
+\end{tikzpicture}
+\end{center}
+
+Cosine similarity compares rating patterns, not absolute rating levels.
+Length of the vector = total “strength” of user ratings, but cosine similarity is normalized so that only direction matters.
+
+\section{User-Based Collaborative Filtering: Vector Representation}
+
+\subsection{From Ratings to Vectors}
+
+In user-based collaborative filtering, we start from a set of observed user--item ratings
+\[
+R = \{(u, i, r_{ui}) \mid u \in U,\, i \in I \}
+\]
+where $U$ is the set of users, $I$ is the set of items (books), and $r_{ui}$ is the rating given by user $u$ to item $i$.
+
+We represent this data as a \textbf{user--item rating matrix} $M \in \mathbb{R}^{|U| \times |I|}$:
+\[
+M_{ui} =
+\begin{cases}
+r_{ui}, & \text{if user } u \text{ rated item } i \\
+0, & \text{otherwise.}
+\end{cases}
+\]
+
+Each \textbf{row} of this matrix corresponds to a \emph{user vector}:
+\[
+\mathbf{u}_k = [\, r_{k1}, r_{k2}, \ldots, r_{k|I|} \,] \in \mathbb{R}^{|I|}
+\]
+Thus, the moment we pivot our data from a triplet $(u, i, r_{ui})$ format into a matrix form,
+we have implicitly constructed a high-dimensional vector representation for every user.
+
+\subsection{User Similarity Computation}
+
+To measure the similarity between two users $u$ and $v$, we use cosine similarity:
+\[
+\text{sim}(u, v) = 
+\frac{\mathbf{u}_u \cdot \mathbf{u}_v}
+     {\|\mathbf{u}_u\|_2 \, \|\mathbf{u}_v\|_2}
+= \frac{\sum_{i \in I} r_{ui} r_{vi}}
+       {\sqrt{\sum_{i \in I} r_{ui}^2} \sqrt{\sum_{i \in I} r_{vi}^2}}
+\]
+
+The cosine similarity compares the orientation of two users’ rating vectors in the item space.
+If two users rated similar items similarly, their vectors will point in nearly the same direction,
+yielding a high cosine similarity.
+
+\subsection{Prediction Step}
+
+For an active user $u$ and target item $i$, we predict the rating $\hat{r}_{ui}$ as a weighted average of ratings from similar users:
+\[
+\hat{r}_{ui} =
+\frac{\sum_{v \in N_u} \text{sim}(u, v) \, r_{vi}}
+     {\sum_{v \in N_u} |\text{sim}(u, v)|}
+\]
+where $N_u$ is the set of top-$k$ most similar users to $u$ who have rated item $i$.
+
+\subsection{Example of User Vectors}
+
+Consider three users and four items:
+
+\[
+M =
+\begin{bmatrix}
+5 & 0 & 3 & 0 \\
+4 & 2 & 0 & 0 \\
+0 & 0 & 4 & 5
+\end{bmatrix}
+\]
+
+This corresponds to the following user vectors:
+\[
+\mathbf{u}_1 = [5, 0, 3, 0], \quad
+\mathbf{u}_2 = [4, 2, 0, 0], \quad
+\mathbf{u}_3 = [0, 0, 4, 5]
+\]
+
+Each user is now represented as a point in a 4-dimensional space
+(1 dimension per item). Similarities are computed between these vectors.
+
+\subsection{Illustration in Vector Space}
+
+\begin{center}
+\begin{tikzpicture}[scale=1.2]
+    % Axes
+    \draw[->, thick] (0,0) -- (4,0) node[right] {Item 1};
+    \draw[->, thick] (0,0) -- (0,3.5) node[above] {Item 2};
+
+    % User vectors
+    \draw[->, thick, blue] (0,0) -- (3,1) node[above right] {$\mathbf{u}_1$};
+    \draw[->, thick, red] (0,0) -- (2,2.5) node[above] {$\mathbf{u}_2$};
+    \draw[->, thick, green!70!black] (0,0) -- (1,3) node[left] {$\mathbf{u}_3$};
+
+    % Angle between u1 and u2
+    \draw (0.8,0) arc[start angle=0,end angle=40,radius=0.8];
+    \node at (1.0,0.4) {$\theta$};
+\end{tikzpicture}
+\end{center}
+
+In this simplified 2D example (only two items), each user is a vector
+in the \emph{item space}. The angle $\theta$ between two users
+represents their dissimilarity, while $\cos(\theta)$ represents their similarity.
+
+\subsection{Summary}
+
+\begin{itemize}
+    \item Each user is a vector in an $|I|$-dimensional space (items are dimensions).
+    \item Ratings are vector components (coordinate values).
+    \item Similarities are computed between users’ vectors.
+    \item Predictions are weighted averages of neighbors’ ratings.
+\end{itemize}
+
+\subsection{User-Based vs. Item-Based Cosine Similarity}
+
+The cosine similarity function itself does not know whether we are computing
+user-based or item-based similarity. The distinction depends solely on the orientation
+of the rating matrix $M$.
+
+Given the rating matrix
+\[
+M_{ui} =
+\begin{bmatrix}
+5 & 3 & 0 \\
+4 & 0 & 2 \\
+0 & 4 & 5
+\end{bmatrix},
+\]
+we have two perspectives:
+
+\begin{enumerate}
+    \item \textbf{User-Based Filtering:}
+    Each user is represented as a vector in the \emph{item space}.
+    Similarity is computed between rows:
+    \[
+    \text{sim}(u, v) = 
+    \frac{M_u \cdot M_v}
+         {\|M_u\|\|M_v\|}.
+    \]
+    This yields a user--user similarity matrix of shape $|U| \times |U|$.
+
+    \item \textbf{Item-Based Filtering:}
+    Each item is represented as a vector in the \emph{user space}.
+    Similarity is computed between columns:
+    \[
+    \text{sim}(i, j) =
+    \frac{M^T_i \cdot M^T_j}
+         {\|M^T_i\|\|M^T_j\|}.
+    \]
+    This yields an item--item similarity matrix of shape $|I| \times |I|$.
+\end{enumerate}
+
+In practice, this difference is implemented by transposing the matrix before applying
+cosine similarity:
+\[
+\text{user-based: } \text{cosine\_similarity}(M), \quad
+\text{item-based: } \text{cosine\_similarity}(M^T).
+\]
 
 \subsection{Item-Based Collaborative Filtering}
 
@@ -181,6 +500,58 @@ where:
 This formula is analogous to user-based collaborative filtering, but here the weights come from item-item similarity instead of user-user similarity.  
 
 The quality of predictions can be evaluated using metrics like \textbf{Mean Squared Error (MSE)} or other regression metrics.
+
+Item-based collaborative filtering predicts a user's rating for an item based on ratings of \textbf{similar items} that the user has already rated.
+
+\subsection*{Steps}
+
+\begin{enumerate}
+    \item Represent each item as a vector in user space:
+    \[
+    \mathbf{i}_j = [r_{1j}, r_{2j}, r_{3j}, \dots, r_{Nj}]
+    \]
+    where \(r_{uj}\) is the rating user \(u\) gave to item \(j\), and \(N\) is the number of users.
+
+    \item Compute an item–item similarity matrix using cosine similarity:
+    \[
+    \text{sim}(i, j) = \frac{\mathbf{i}_i \cdot \mathbf{i}_j}{\|\mathbf{i}_i\| \, \|\mathbf{i}_j\|}
+    \]
+
+    \item Predict a user \(u\)'s rating for item \(j\) using similar items they have rated:
+    \[
+    \hat{r}_{uj} = \frac{\sum_{k \in N(j)} \text{sim}(j,k) \cdot r_{uk}}{\sum_{k \in N(j)} |\text{sim}(j,k)|}
+    \]
+    where \(N(j)\) is the set of top-K similar items to \(j\) that the user has rated.
+\end{enumerate}
+
+\subsection*{Intuition}
+
+\begin{itemize}
+    \item Each item is a vector in \(N\)-dimensional user space.
+    \item Cosine similarity measures which items are rated similarly by users.
+    \item Works well in sparse datasets because items tend to have more ratings than individual users.
+\end{itemize}
+
+\subsection*{Graphical Illustration}
+
+\tdplotsetmaincoords{60}{120}
+\begin{tikzpicture}[tdplot_main_coords, scale=2]
+
+% Draw axes
+\draw[->] (0,0,0) -- (1.2,0,0) node[anchor=north east]{$\text{User 1}$};
+\draw[->] (0,0,0) -- (0,1.2,0) node[anchor=north west]{$\text{User 2}$};
+\draw[->] (0,0,0) -- (0,0,1.2) node[anchor=south]{$\text{User 3}$};
+
+% Draw item vectors
+\draw[->, thick, blue] (0,0,0) -- (1,0.6,0) node[midway, above] {Item A};
+\draw[->, thick, red] (0,0,0) -- (0.8,0.4,0) node[midway, above right] {Item B};
+\draw[->, thick, green] (0,0,0) -- (0.2,1,0.6) node[midway, right] {Item C};
+
+% Optionally dashed lines for visual reference
+\draw[dashed] (0,0,0) -- (1,0.6,0);
+\draw[dashed] (0,0,0) -- (0.8,0.4,0);
+
+\end{tikzpicture}
 
 \subsection{Comparison of User-Based and Item-Based Collaborative Filtering}
 
