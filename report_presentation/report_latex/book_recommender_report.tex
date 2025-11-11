@@ -1,8 +1,8 @@
 % Author: Milos A. Saric, copyright 2025. https://saricmilos.com/
 
-\title{Book Recommendation System --- Collaborative, Content-Based \& Hybrid Filtering Approaches}
+\title{Book Recommendation System --- Collaborative \& Content-Based Filtering Approaches}
 \date{\today}
-\author{Milos Saric}
+\author{Milos Saric \\[1mm] {\small \socials}}
 \maketitle
 
 
@@ -318,7 +318,7 @@ Even though User B gives slightly lower ratings, the \textit{pattern is similar}
 
 \tdplotsetmaincoords{60}{120}
 \begin{center}
-\begin{tikzpicture}[tdplot_main_coords, scale=2]
+\begin{tikzpicture}[tdplot_main_coords, scale=5]
 
 % Draw axes
 \draw[->] (0,0,0) -- (1.2,0,0) node[anchor=north east]{$\text{Item 1}$};
@@ -390,53 +390,6 @@ measuring how accurately the system predicts user ratings and how effective
 its recommendations are. Two major evaluation perspectives are commonly used:
 prediction accuracy and recommendation quality.
 
-\begin{enumerate}
-    \item \textbf{Prediction Accuracy Metrics}
-
-    These metrics evaluate how close the predicted ratings $\hat{r}_{ui}$ are to 
-    the actual user ratings $r_{ui}$.
-
-    \begin{enumerate}
-        \item \textbf{Mean Absolute Error (MAE)}
-        \begin{equation}
-        MAE = \frac{1}{|T|} \sum_{(u,i) \in T} |r_{ui} - \hat{r}_{ui}|
-        \end{equation}
-        where $T$ is the test set. Lower MAE indicates better predictive accuracy.
-
-        \item \textbf{Root Mean Squared Error (RMSE)}
-        \begin{equation}
-        RMSE = \sqrt{ \frac{1}{|T|} \sum_{(u,i) \in T} (r_{ui} - \hat{r}_{ui})^2 }
-        \end{equation}
-        Lower RMSE values correspond to better prediction quality.
-
-        \item \textbf{Mean Squared Error (MSE)}
-        \begin{equation}
-        MSE = \frac{1}{|T|} \sum_{(u,i) \in T} (r_{ui} - \hat{r}_{ui})^2
-        \end{equation}
-
-        \item \textbf{Normalized Mean Absolute Error (NMAE)}
-        \begin{equation}
-        NMAE = \frac{MAE}{r_{\text{max}} - r_{\text{min}}}
-        \end{equation}
-    \end{enumerate}
-
-    \item \textbf{Top-N Recommendation Metrics}
-
-    When the system produces a ranked list of recommended items, ranking-based metrics are preferred.
-
-    \begin{enumerate}
-        \item \textbf{Precision@N}
-        \begin{equation}
-        Precision@N = \frac{\text{Number of relevant items in top } N}{N}
-        \end{equation}
-
-        \item \textbf{Recall@N}
-        \begin{equation}
-        Recall@N = \frac{\text{Number of relevant items in top } N}{\text{Total number of relevant items}}
-        \end{equation}
-
-    \end{enumerate}
-
     \item \textbf{Evaluation Procedure}
 
     A standard workflow:
@@ -449,7 +402,6 @@ prediction accuracy and recommendation quality.
         \item Optionally, evaluate top-$N$ recommendations using Precision@N and Recall@N.
     \end{enumerate}
 
-\end{enumerate}
 \end{enumerate}
 
 \subsubsection{Summary}
@@ -542,7 +494,7 @@ This formula is analogous to the user-based CF prediction, but here the weights 
 
 \begin{center}
 \tdplotsetmaincoords{60}{120}
-\begin{tikzpicture}[tdplot_main_coords, scale=2]
+\begin{tikzpicture}[tdplot_main_coords, scale=5]
 
 % Draw axes
 \draw[->] (0,0,0) -- (1.2,0,0) node[anchor=north east]{$\text{User 1}$};
@@ -561,200 +513,148 @@ This formula is analogous to the user-based CF prediction, but here the weights 
 \end{tikzpicture}
 \end{center}
 
-\subsection{Challenges and Advantages of User-Based and Item-Based Collaborative Filtering}
-
-\subsubsection{Challenges in Both User and Item Based Collaborative Filtering}
-
-Both user-based and item-based collaborative filtering rely on overlapping ratings, 
-so they are affected by \emph{sparsity} and \emph{cold start} problems. However, the 
-manifestation differs slightly between the two methods. In addition to
-sparsity and the cold start problem, several other challenges affect both user-based
-and item-based collaborative filtering:
-
-\begin{enumerate}
-\item \textbf{Sparsity}
-
-\begin{itemize}
-    \item \textbf{User-Based CF:} Many users rate only a small fraction of items, making it 
-    difficult to find similar users with overlapping ratings. As a result, 
-    predicted ratings can be inaccurate.
-    \item \textbf{Item-Based CF:} Many items receive only a few ratings, making item-item 
-    similarity computations less reliable. Rare items may appear dissimilar 
-    even if their ratings are consistent.
-\end{itemize}
-
-\item \textbf{Cold Start Problem}
-
-\begin{itemize}
-    \item \textbf{User-Based CF:} New users have not rated any items, so it is impossible 
-    to find neighbors. New items are less of a problem if other similar users exist.
-    \item \textbf{Item-Based CF:} New items have no ratings, so similarity scores cannot 
-    be computed. New users are less of a problem because predictions can still be 
-    based on ratings of items the user has already rated.
-\end{itemize}
-
-\item \textbf{Data Noise}
-
-User ratings are inherently noisy and sometimes inconsistent. Some users may rate items unpredictably or with personal bias, and some items may receive unusually high or low ratings.  
-This noise can distort similarity calculations and lead to inaccurate predictions in both user-based and item-based CF.
-
-\item \textbf{Scalability}
-
-Both approaches require the computation and storage of similarity matrices:  
-\begin{itemize}
-    \item User-based CF: user-user similarity matrix of size $|U| \times |U|$
-    \item Item-based CF: item-item similarity matrix of size $|I| \times |I|$
-\end{itemize}
-For large datasets, this can become computationally expensive in terms of time and memory. Common mitigations include using top-K neighbors, approximate nearest neighbor search, or clustering techniques.
-
-\item \textbf{Limited Novelty / Popularity Bias}
-
-Collaborative filtering tends to recommend items that are already popular or similar to what the user has rated before.  
-As a result, less popular or niche items may rarely be suggested, reducing the diversity and novelty of recommendations.  
-This can lead to echo-chamber effects where users are only exposed to items similar to what they have already interacted with.
-\end{enumerate}
-
-\subsubsection{Advantages and Disadvantages of User-Based Collaborative Filtering}
-
-User-based collaborative filtering can offer more diverse recommendations because it focuses on similarities between users rather than items. For example, if user X likes an item that user J has never seen, user J may still receive a recommendation for that item if their overall preferences are similar. The main drawback is computational cost: calculating the K nearest neighbors for each user can be expensive.
-
-
-\paragraph{Advantages}
-\begin{itemize}
-    \item \textbf{Ability to Discover Novel Items:} UBCF focuses on similarities between users rather than items. 
-    This allows a user to be recommended an item they have never seen before if similar users liked it, 
-    leading to more diverse and serendipitous recommendations.
-    \item \textbf{Intuitive and Explainable:} Recommendations can be easily justified with statements like 
-    ``You are similar to these users, and they liked this item,'' which is helpful for transparency.
-    \item \textbf{Adapts to Individual Preferences:} Captures unique taste patterns of users, even for niche interests, 
-    as long as there are similar users in the dataset.
-\end{itemize}
-
-\paragraph{Disadvantages}
-\begin{itemize}
-    \item \textbf{High Computational Cost:} Calculating similarities between all user pairs and finding the top-K neighbors 
-    is expensive, especially for large datasets. Complexity is approximately $O(|U|^2 \cdot |I|)$.
-    \item \textbf{Sparsity Sensitivity:} Many users rate only a few items, making it difficult to find overlapping ratings. 
-    Sparse data can lead to unreliable similarity computations and poor recommendations.
-    \item \textbf{Cold Start Problem for New Users:} New users without ratings cannot be matched to similar users, 
-    so no recommendations can be generated until they provide ratings.
-    \item \textbf{Scalability Issues:} As the number of users grows, both computation and storage of the user-user similarity matrix increase. 
-    Optimizations such as clustering or approximate nearest neighbors may be needed.
-    \item \textbf{Noise and Outliers:} Users who rate inconsistently or give extreme ratings can distort similarity calculations, 
-    reducing prediction accuracy.
-\end{itemize}
-
-\subsubsection{Advantages and Disadvantages of Item-Based Collaborative Filtering}
-
-Item-based filtering often seems more computationally intensive, but much of the work can be done offline. 
-Specifically, the item-item similarity matrix can be precomputed because items change less frequently than users.
-This reduces repeated calculations but can lead to less diverse recommendations, as items similar to those already liked
-are more likely to be suggested.
-\paragraph{Advantages}
-\begin{itemize}
-    \item \textbf{Offline Computation:} The item–item similarity matrix can be precomputed because items change less frequently than users. 
-    This reduces online computational cost, making real-time recommendations faster.
-    \item \textbf{Stable Recommendations:} Item similarities are less affected by individual user rating noise, 
-    leading to more consistent and reliable recommendations.
-    \item \textbf{Scalability for Large User Bases:} Since similarities are computed between items (which are typically fewer than users), 
-    the method scales better when the number of users is very large.
-    \item \textbf{Easy Integration with Existing Data:} Once the item similarity matrix is built, it can be reused across all users without recomputation.
-\end{itemize}
-
-\paragraph{Disadvantages}
-\begin{itemize}
-    \item \textbf{Popularity vs Rare Items:} Items with very few ratings may appear dissimilar to popular items even if they are genuinely similar, 
-    because vectors are dominated by zeros from users who did not rate them. This can lead to rare but relevant items being under-recommended.
-    \item \textbf{Less Novelty / Popularity Bias:} Recommendations tend to favor items similar to those a user has already rated, reducing diversity and serendipity.
-    \item \textbf{Cold Start for New Items:} Newly added items have no ratings, so their similarities cannot be computed, 
-    preventing recommendations until enough users rate them.
-    \item \textbf{Precomputation Storage Cost:} Storing the item–item similarity matrix for very large catalogs can require significant memory.
-    \item \textbf{Assumes Static Item Similarity:} Precomputed similarities may become outdated if user preferences or item popularity change over time.
-\end{itemize}
-
 \section{Content Based Filtering}
 
-
-Content-based filtering is one of the two primary approaches in recommender systems.  
+Content-Based Filtering recommends items that are \textit{similar to those a user has previously liked}.  
+It relies on the features or attributes of the items, such as movie genre, product category, author, or keywords.  
+The system first builds a user profile based on the characteristics of items the user interacted with, then suggests other items with similar properties.  
 It generates recommendations by analyzing the features of items and matching them to a user's preferences. Essentially, the system compares a \textbf{user profile} with an \textbf{item profile} to predict which items the user is likely to engage with.
-Content-Based Recommender Systems (CBRSs) often build a personalized model for each user. The process begins by collecting the features of items the user has interacted with—this forms the user profile. These items serve as a training set for a user-specific classifier or regression model. 
+Content-Based Recommender Systems often build a personalized model for each user. The process begins by collecting the features of items the user has interacted with which forms the user profile. These items serve as a training set for a user-specific classifier or regression model. 
 
 In the model, the item features act as independent variables, while the user's past behavior-such as ratings, likes, 
-or purchases—serves as the dependent variable. Once trained, the model predicts the user's likely response to new items, 
+or purchases serve as the dependent variable. Once trained, the model predicts the user's likely response to new items, 
 allowing the system to recommend items that align with the user's preferences.
 The \textbf{item profile} captures the characteristics of an item, including structured features or descriptive metadata. For example, a streaming service may represent movies using attributes such as genre, director, release year, or cast.  
 
 The \textbf{user profile} reflects the individual's preferences and past behavior. It is typically built from items the user has previously interacted with, including ratings, likes, dislikes, searches, or other engagement data.  
-
-Content-based recommender systems often incorporate machine learning and data science techniques to improve prediction accuracy, enabling the recommendation of new items that match the user’s interests.  
 In short, this approach focuses on \textit{what the user likes}, rather than what other users like.
 
 \subsection{Item Representations in Content-Based Filtering}
 
-In content-based filtering, items and users are often represented as vectors in a multi-dimensional feature space. Each item's feature—such as genre, author, or other metadata—define its coordinates. Boolean values (1 for presence, 0 for absence) are commonly used to indicate whether an item possesses a particular feature.
+In content-based filtering, items and users are often represented as vectors in a multi-dimensional feature space. 
+Each item's feature such as genre, author, or other metadata define its coordinates. 
+Boolean values (1 for presence, 0 for absence) are commonly used to indicate whether an item possesses a particular feature.
 
-\textbf{Example:} A few novels represented by three genres (Adventure, Bildungsroman, Children):
+\textbf{Example:} A few novels represented by three genres (Biography, Fantasy, Thriller):
 
 \begin{table}[H]
 \centering
 \caption{Boolean Feature Representation of Novels}
 \begin{tabular}{|l|c|c|c|}
 \hline
-\textbf{Novel} & \textbf{Adventure} & \textbf{Bildungsroman} & \textbf{Children} \\
+\textbf{Novel} & \textbf{Biography} & \textbf{Fantasy} & \textbf{Thriller} \\
 \hline
-Little Women & 0 & 1 & 1 \\
-Northanger Abbey & 0 & 1 & 0 \\
-Peter Pan & 1 & 0 & 1 \\
-Treasure Island & 1 & 0 & 1 \\
+Steve Jobs & 0 & 1 & 1 \\
+1984 & 0 & 1 & 0 \\
+The Hobbit & 1 & 0 & 1 \\
+The Da Vinci Code & 1 & 0 & 1 \\
 \hline
 \end{tabular}
 \end{table}
 
 In this 3D vector space, each dimension corresponds to a feature (Adventure, Bildungsroman, Children). A novel’s coordinates are determined by its Boolean values. For example:
 
-\begin{itemize}
-    \item \textit{Little Women:} (0,1,1)  
-    \item \textit{Northanger Abbey:} (0,1,0)  
-    \item \textit{Peter Pan:} (1,0,1)  
-    \item \textit{Treasure Island:} (1,0,1)  
-\end{itemize}
-
-% Set up 3D coordinates
-\tdplotsetmaincoords{70}{120} % Adjust viewing angle
+\tdplotsetmaincoords{70}{120}
 
 \begin{center}
 \begin{tikzpicture}[scale=3,tdplot_main_coords]
     % Axes
-    \draw[->] (0,0,0) -- (1.5,0,0) node[anchor=north east] {Bildungsroman (X)};
-    \draw[->] (0,0,0) -- (0,1.5,0) node[anchor=south west] {Adventure (Y)};
-    \draw[->] (0,0,0) -- (0,0,1.5) node[anchor=south] {Children's Literature (Z)};
+    \draw[->] (0,0,0) -- (1.5,0,0) node[anchor=north east] {Thriller (X)};
+    \draw[->] (0,0,0) -- (0,1.5,0) node[anchor=south west] {Fantasy (Y)};
+    \draw[->] (0,0,0) -- (0,0,1.5) node[anchor=south] {Biography (Z)};
     
-    % Plot novels
-    \coordinate (LW) at (0,1,1);
-    \coordinate (NA) at (0,1,0);
-    \coordinate (PP) at (1,0,1);
-    \coordinate (TI) at (1,0,1);
+    % Coordinates
+    \coordinate (SJ) at (0,1,1);
+    \coordinate (N1984) at (0,1,0);
+    \coordinate (HOBBIT) at (1,0,1);
+    \coordinate (DAVINCI) at (1,0,1);
     
-    % Draw points
-    \filldraw[red] (LW) circle (0.03) node[above right] {Little Women};
-    \filldraw[blue] (NA) circle (0.03) node[below right] {Northanger Abbey};
-    \filldraw[green] (PP) circle (0.03) node[above left] {Peter Pan};
-    \filldraw[orange] (TI) circle (0.03) node[below left] {Treasure Island};
+    % Draw vectors (lines from origin)
+    \draw[->, thick, red] (0,0,0) -- (SJ);
+    \draw[->, thick, blue] (0,0,0) -- (N1984);
+    \draw[->, thick, green!70!black] (0,0,0) -- (HOBBIT);
+    \draw[->, thick, orange!90!black] (0,0,0) -- (DAVINCI);
     
-    % Optional: dashed lines to axes for clarity
-    \draw[dashed, gray] (LW) -- (0,1,0) -- (0,0,0);
-    \draw[dashed, gray] (NA) -- (0,0,0);
-    \draw[dashed, gray] (PP) -- (1,0,0) -- (0,0,0);
-    \draw[dashed, gray] (TI) -- (1,0,0) -- (0,0,0);
+    % Points and labels
+    \filldraw[red] (SJ) circle (0.03) node[above right] {\textit{Steve Jobs}};
+    \filldraw[blue] (N1984) circle (0.03) node[below right] {\textit{1984}};
+    \filldraw[green!70!black] (HOBBIT) circle (0.03) node[above left] {\textit{The Hobbit}};
+    \filldraw[orange!90!black] (DAVINCI) circle (0.03) node[below left] {\textit{The Da Vinci Code}};
 \end{tikzpicture}
 \end{center}
 
+
 The closer two novels are in this space, the more similar they are according to the selected features. For instance,
- \textit{Peter Pan} and \textit{Treasure Island} overlap completely, while \textit{Little Women} is closer to
-  \textit{Northanger Abbey} than to the adventure novels.  Since Peter Pan and Treasure Island are very similar in the feature space,
-   a user who has previously purchased Peter Pan is likely to be recommended Treasure Island, as it closely matches their interests.
+ \textit{The Hobbit} and \textit{The Da Vinci Code} overlap completely, while \textit{Steve Jobs} is closer to
+  \textit{1984} than to the thriller novels.  Since The Hobbit and The Da Vinci Code are very similar in the feature space,
+   a user who has previously purchased The Hobbit is likely to be recommended The Da Vinci Code, as it closely matches their interests.
 
 \textbf{Visualization:} We can plot these items in a 3D Cartesian coordinate system, with each axis representing one genre. Novel vectors are points in this space, and proximity reflects similarity. Adding more features (e.g., Fantasy, Gothic) increases the dimensionality, adjusting item positions accordingly.
+
+In content-based filtering, each user is represented by a vector that summarizes their preferences. This user vector, denoted $\mathbf{u}_x$, is typically computed as a weighted average of the vectors of the books the user has liked or rated highly:
+
+\begin{equation}
+\mathbf{u}_x = \frac{1}{N_x} \sum_{i \in I_x} w_{xi} \cdot \mathbf{v}_i
+\end{equation}
+
+where $I_x$ is the set of books user $x$ has interacted with, $w_{xi}$ is the weight associated with book $i$ for this user (such as a normalized rating or binary like/dislike), $\mathbf{v}_i$ is the feature vector of book $i$, and $N_x$ is a normalization factor.
+
+Once the user vector is constructed, the next step is to compute the similarity between this user vector and the vector of every book in the catalog. The most common similarity measure is cosine similarity, defined as
+
+\begin{equation}
+\text{sim}(\mathbf{u}_x, \mathbf{v}_i) = \frac{\mathbf{u}_x \cdot \mathbf{v}_i}{\|\mathbf{u}_x\| \, \|\mathbf{v}_i\|}
+\end{equation}
+
+High similarity indicates that the book aligns closely with the user's preferences, making it a strong candidate for recommendation. 
+Low similarity suggests the book is less likely to match the user's interests. After computing the similarity for all books,
+they are sorted by score, and the top-$K$ books are recommended to the user, excluding those they have already rated. 
+This process allows the system to suggest books that are most likely to match the user's tastes based on the features encoded
+in the vectors.
+
+\begin{figure}[H]
+\centering
+\scalebox{0.85}{
+\begin{tikzpicture}[
+    node distance=1.7cm and 2.2cm,
+    box/.style={
+        rectangle, rounded corners, draw=black, fill=green!15, 
+        text width=3.4cm, align=center, minimum height=0.9cm,
+        font=\small
+    },
+    arrow/.style={->, thick}
+]
+
+% Nodes
+\node[box] (users) {Users \\[3pt]\footnotesize Provide ratings and demographic info};
+\node[box, right=of users] (obtain) {Obtain User Information \\[3pt]\footnotesize Collect rating history and features};
+\node[box, right=of obtain] (builduser) {Build User Models \\[3pt]\footnotesize Average feature vectors of liked books};
+\node[box, right=of builduser] (update) {Update Models \\[3pt]\footnotesize Adjust profiles with new ratings};
+
+\node[box, below=of builduser] (feedback) {Feedback or Interest Change \\[3pt]\footnotesize User interactions refine profiles};
+
+\node[box, below=of obtain] (buildobject) {Build Object Feature Models \\[3pt]\footnotesize Encode books with TF–IDF + numeric data};
+\node[box, right=of buildobject] (similarity) {Similarity Comparison \\[3pt]\footnotesize Cosine similarity between user and book vectors};
+\node[box, right=of similarity] (history) {Personalized Information \\[3pt]\footnotesize Combine past preferences with results};
+\node[box, below=of history] (results) {Provide Recommendation Results \\[3pt]\footnotesize Return top-N most similar books};
+
+% Arrows
+\draw[arrow] (users) -- (obtain);
+\draw[arrow] (obtain) -- (builduser);
+\draw[arrow] (builduser) -- (update);
+\draw[arrow] (builduser) -- (feedback);
+\draw[arrow] (update) |- (similarity);
+\draw[arrow] (feedback) -| (update);
+\draw[arrow] (buildobject) -- (similarity);
+\draw[arrow] (similarity) -- (history);
+\draw[arrow] (history) -- (results);
+\draw[arrow] (results) -| (users);
+
+\end{tikzpicture}
+}
+\caption{Flowchart of the Content-Based Filtering process with steps implemented in the book recommender system.}
+\label{fig:cbf-flowchart}
+\end{figure}
+
 
 \subsection{Item-Based Collaborative Filtering vs. Content-Based Filtering}
 
@@ -783,51 +683,6 @@ The guiding principle is: \textit{``You liked this because of its content, so yo
 
 \textbf{Disadvantages:} Content-based filtering is limited by the features available to describe items. If a user’s preference is based on characteristics not captured in the item profile (e.g., specific plot elements or production details), the system may fail to provide relevant recommendations. Moreover, it tends to overspecialize, suggesting items very similar to those already liked, which reduces diversity and limits discovery of new or unexpected items.
 
-
-\section{Summary of Content-Based and Collaborative Filtering Approaches}
-
-Recommendation systems primarily rely on two major approaches: \textbf{Content-Based Filtering} and \textbf{Collaborative Filtering}.  
-Although both aim to predict what a user will like next, they differ in how they determine similarity and generate recommendations.
-
-\subsection{Content-Based Filtering}
-
-Content-Based Filtering recommends items that are \textit{similar to those a user has previously liked}.  
-It relies on the features or attributes of the items, such as movie genre, product category, author, or keywords.  
-The system first builds a user profile based on the characteristics of items the user interacted with, then suggests other items with similar properties.  
-
-\textbf{Example:}  
-If a user enjoys a science fiction movie featuring space and robots, the system may recommend other sci-fi movies with similar themes.
-
-\begin{itemize}
-    \item Focuses on the \textbf{content or attributes} of items.
-    \item Learns from the user's own past preferences.
-    \item Works well even when few other users exist.
-\end{itemize}
-
-\subsection{Collaborative Filtering}
-
-Collaborative Filtering, on the other hand, recommends items based on the behavior and preferences of \textit{other users}.  
-It assumes that users who agreed in the past will continue to share similar interests in the future.
-
-\textbf{Example:}  
-If two users both liked the movie \textit{Gifted}, and one of them later enjoyed \textit{Sinister}, the system might recommend \textit{Sinister} to the other user as well.
-
-\begin{itemize}
-    \item Focuses on \textbf{user interactions and ratings}.
-    \item Learns from the collective preferences of many users.
-    \item Does not rely on item features.
-\end{itemize}
-
-Collaborative Filtering is generally divided into two subtypes:
-\begin{enumerate}
-    \item \textbf{User-User Filtering:} Finds users with similar tastes and recommends what they liked.
-    \item \textbf{Item-Item Filtering:} Recommends items similar to those the user liked, based on other users’ interactions.
-\end{enumerate}
-
-In summary, \textbf{content-based filtering} focuses on the \textit{features of items}, while \textbf{collaborative filtering} focuses on the \textit{relationships between users and items}.  
-Modern recommender systems often combine both techniques to create more accurate and personalized \textbf{hybrid models}.
-
-
 \section{Similarity/Distance Measures}\label{sec:similarity}
 
 In content-based filtering, items are compared using their feature representations, and those that are closer in feature space are
@@ -840,7 +695,8 @@ quantify closeness.
 One of the most common methods, especially for high-dimensional feature spaces, is \textbf{Cosine Similarity}. Cosine similarity measures
 cosine of the angle between two vectors, giving a value between -1 and 1. The closer the value is to 1, the more similar the items are considered. 
 
-\begin{tikzpicture}[scale=3]
+\begin{center}
+\begin{tikzpicture}[scale=5]
 
 % Axes
 \draw[->, thick] (0,0) -- (1.5,0) node[anchor=north] {Book Feature 1 (Drama)};
@@ -871,7 +727,7 @@ cosine of the angle between two vectors, giving a value between -1 and 1. The cl
 \node at (0.18,0.22) {$\theta$};
 
 \end{tikzpicture}
-
+\end{center}
 
 Here, $\theta$ is the angle between vectors $\mathbf{x}$ and $\mathbf{y}$. Cosine similarity measures how aligned these vectors are: the smaller the angle, the closer the similarity is to 1.
 
@@ -897,21 +753,21 @@ In content-based filtering, each item is represented as a vector in a multi-dime
 
 \begin{itemize}
     \item The \textbf{dot product} of two vectors $\mathbf{x}$ and $\mathbf{y}$ quantifies how much the vectors point in the same direction:
-    \[
+    \begin{equation}
     \mathbf{x} \cdot \mathbf{y} = x_1 y_1 + x_2 y_2 + \dots + x_n y_n = \sum_{i=1}^{n} x_i y_i
-    \]
+    \end{equation}
     Each term represents the contribution of a feature to the overall similarity.
     \item The \textbf{norm} or length of a vector is:
-    \[
+    \begin{equation}
     \|\mathbf{x}\| = \sqrt{x_1^2 + x_2^2 + \dots + x_n^2}
-    \]
+    \end{equation}
     Normalizing by the vector lengths ensures that cosine similarity measures direction rather than magnitude.
 \end{itemize}
 
 Cosine similarity is then defined as:
-\[
+\begin{equation}
 \text{sim}(\mathbf{x}, \mathbf{y}) = \frac{\mathbf{x} \cdot \mathbf{y}}{\|\mathbf{x}\| \, \|\mathbf{y}\|} = \cos \theta
-\]
+\end{equation}
 
 \noindent where $\theta$ is the angle between the vectors. The similarity ranges from $-1$ (opposite) to $1$ (identical), with $0$ indicating orthogonal (no similarity).
 
@@ -1064,3 +920,196 @@ The Pearson correlation is:
     \item This method measures **pattern similarity**, so two books with similar relative features but different absolute levels can still have a high correlation.
 \end{itemize}
 
+\section{Evaluation Metrics}\label{sec:evaluation}
+
+To assess the performance of the content-based recommender system, we employ two categories of evaluation metrics: 
+(1) prediction accuracy metrics, which measure how accurately the system predicts user ratings, and 
+(2) top-N recommendation metrics, which evaluate the quality of the ranked lists of recommended books.
+
+    \subsection{Prediction Accuracy Metrics}
+    These metrics evaluate how close the predicted ratings $\hat{r}_{ui}$ are to 
+    the actual user ratings $r_{ui}$.
+
+    \begin{itemize}
+        \item \textbf{Mean Absolute Error (MAE)}
+        \begin{equation}
+        MAE = \frac{1}{|T|} \sum_{(u,i) \in T} |r_{ui} - \hat{r}_{ui}|
+        \end{equation}
+        where $T$ denotes the test set of user--item pairs. Lower MAE indicates higher predictive accuracy.
+
+        \item \textbf{Root Mean Squared Error (RMSE)}
+        \begin{equation}
+        RMSE = \sqrt{ \frac{1}{|T|} \sum_{(u,i) \in T} (r_{ui} - \hat{r}_{ui})^2 }
+        \end{equation}
+        RMSE penalizes larger errors more heavily than MAE, and thus reflects how severely the system deviates from the actual ratings.
+
+        \item \textbf{Mean Squared Error (MSE)}
+        \begin{equation}
+        MSE = \frac{1}{|T|} \sum_{(u,i) \in T} (r_{ui} - \hat{r}_{ui})^2
+        \end{equation}
+        MSE serves as the base metric for RMSE, providing a measure of the average squared deviation between predicted and true ratings.
+
+        \item \textbf{Normalized Mean Absolute Error (NMAE)}
+        \begin{equation}
+        NMAE = \frac{MAE}{r_{\text{max}} - r_{\text{min}}}
+        \end{equation}
+        NMAE normalizes the MAE by the range of the rating scale, enabling comparability across datasets with different rating intervals.
+    \end{itemize}
+
+    \subsection{Top-N Recommendation Metrics}
+    When the system produces a ranked list of recommended items, ranking-based metrics are preferred over pure rating prediction metrics.
+
+    \begin{itemize}
+        \item \textbf{Precision@N}
+        \begin{equation}
+        Precision@N = \frac{\text{Number of relevant items in top } N}{N}
+        \end{equation}
+        Precision@N measures the proportion of relevant items among the top-$N$ recommendations.
+
+        \item \textbf{Recall@N}
+        \begin{equation}
+        Recall@N = \frac{\text{Number of relevant items in top } N}{\text{Total number of relevant items}}
+        \end{equation}
+        Recall@N evaluates how well the system retrieves all relevant items for a user, indicating the completeness of recommendations.
+    \end{itemize}
+
+\section{Deployment of Book Recommendation System}
+
+Having an app on our local system simply isn't enough, it needs to be accessible online.
+Deployment is the process of making your application available for users so they can access and interact with it.
+It usually means moving your code from a development environment to a live production environment, where the application is fully operational.
+
+\begin{center}
+    
+\begin{tikzpicture}[node distance=2cm]
+
+% Nodes
+\node (user) [startstop] {User / Client};
+\node (api) [process, below of=user] {API Gateway / Load Balancer};
+\node (server) [process, below of=api] {Web / Application Server (AWS / Render)};
+\node (processing) [process, below of=server] {Data Processing Layer (PySpark)};
+\node (database) [database, below of=processing] {Oracle Database};
+\node (response) [startstop, below of=database] {Response sent back to User};
+
+% Arrows
+\draw [arrow] (user) -- (api);
+\draw [arrow] (api) -- (server);
+\draw [arrow] (server) -- (processing);
+\draw [arrow] (processing) -- (database);
+\draw [arrow] (database) -- (response);
+
+\end{tikzpicture}
+\end{center}
+
+\subsection{Application Programming Interface (API)}
+
+An API, short for Application Programming Interface, is basically a bridge that lets different software programs talk to each other.
+It defines a set of rules and protocols that allow applications to exchange data, features, or functionality. 
+Instead of building every feature from scratch, developers can use APIs to connect their apps with existing services or data sources,
+saving time and effort.
+APIs also give application owners a controlled and secure way to share certain parts of their app's data or capabilities—either with
+internal teams or with outside users. They’re designed to expose only the specific information or actions that are needed for a given 
+task, not the entire system. By doing this, APIs help protect sensitive information and maintain overall system security while still
+enabling smooth, efficient communication between different software systems.
+
+It helps to think of API communication as a conversation between a client and a server. In a book recommender system,
+ the user's app—the client—sends a request, and the server responds with recommendations.
+  The API is the bridge that makes this connection possible.
+
+Here's how it works in practice: imagine a user types in the name of a book they like. When they hit “Submit,” 
+the app sends this information as a request through the API. 
+The request travels to the server, which runs a trained recommendation model to find books similar to the one the user entered.
+
+The server then sends back a response containing a list of recommended books. 
+The API takes this data and delivers it to the app, so the user sees their personalized recommendations almost instantly.
+
+From the user's perspective, it feels seamless—they just type a book name and get suggestions.
+ Behind the scenes, though, the API is carefully handling the request and response, sharing only the information needed, 
+ keeping the system secure, and making sure the app and server communicate smoothly.
+
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, align=center, fill=#1!30, text centered},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick, color=#1},
+  node distance=1.5cm
+]
+
+% Top row nodes
+\node[box=blue] (user) {User \\ (types book name)};
+\node[box=green, right=of user] (client) {Client App \\ (sends request)};
+\node[box=orange, right=of client] (api) {API \\ (handles request/response)};
+\node[box=red, right=of api] (server) {Server \\ (runs recommendation model)};
+
+% Bottom response row
+\node[box=purple, below=1.5cm of api] (response) {Response \\ (recommended books)};
+
+% Top arrows (request)
+\draw[arrow=blue] (user) -- (client);
+\draw[arrow=green] (client) -- (api);
+\draw[arrow=orange] (api) -- (server);
+
+% Response arrows
+\draw[arrow=red] (server.south) -- (response.north);
+\draw[arrow=purple] (response.north) -- (api.south);
+
+% Return arrows to client and user
+\draw[arrow=orange] (api.west) -- ++(-0.9,0) |- (client.south);
+\draw[arrow=green] (client.north) -- ++(-0.9,0) |- (user.south);
+
+\end{tikzpicture}
+
+\begin{enumerate}
+    \item \textbf{User Input:} The user types a book title (and optionally a user ID) in the application interface.
+    \item \textbf{Client App:} The client app collects the input and formats it into an API request (e.g., JSON) that is sent to the API.
+    \item \textbf{API:} The API acts as a gateway. It receives the request, validates it, and forwards it to the server. It also ensures that only necessary information is exchanged, keeping internal details secure.
+    \item \textbf{Server:} The server runs the recommendation logic:
+        \begin{itemize}
+            \item Looks up the book embedding from the Oracle database or computes it if it’s free text.
+            \item Performs a nearest-neighbor search in the embedding space to find similar books.
+            \item Optionally combines item similarity with user profile data for personalization.
+        \end{itemize}
+    \item \textbf{Oracle Database:} Stores all persistent data, including books, embeddings, and user interaction history. The server queries it using SQL, retrieves the necessary data, and processes it in memory.
+    \item \textbf{Response:} After computing the Top-N recommended books, the server sends the results back to the API, which forwards them to the client app. The user sees the recommendations seamlessly in the interface.
+\end{enumerate}
+
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, align=center, fill=#1!30, text centered},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick, color=#1},
+  node distance=1.5cm
+]
+
+% Top row nodes
+\node[box=blue] (user) {User \\ (types book name)};
+\node[box=green, right=of user] (client) {Client App \\ (sends request)};
+\node[box=orange, right=of client] (api) {API \\ (handles request/response)};
+\node[box=red, right=of api] (server) {Server \\ (runs recommendation model)};
+\node[box=cyan, below=1.5cm of server] (db) {Oracle Database \\ (stores books, embeddings, user data)};
+\node[box=purple, below=1.5cm of api] (response) {Response \\ (recommended books)};
+
+% Top arrows (request)
+\draw[arrow=blue] (user) -- (client);
+\draw[arrow=green] (client) -- (api);
+\draw[arrow=orange] (api) -- (server);
+\draw[arrow=red] (server.south) -- (db.north);
+
+% Database response to server
+\draw[arrow=cyan] (db.north) -- ++(0,0.5) -| (server.south);
+
+% Response arrows back to client/user
+\draw[arrow=purple] (server.south east) -- (response.north west);
+\draw[arrow=purple] (response.north east) -- (api.south);
+\draw[arrow=orange] (api.west) -- ++(-0.9,0) |- (client.south);
+\draw[arrow=green] (client.north) -- ++(-0.9,0) |- (user.south);
+
+\end{tikzpicture}
+\end{center}
+
+\subsection*{Notes on the Flow}
+\begin{itemize}
+    \item \textbf{User $\rightarrow$ Client $\rightarrow$ API $\rightarrow$ Server $\rightarrow$ Database:} This is the request path.
+    \item \textbf{Database $\rightarrow$ Server $\rightarrow$ API $\rightarrow$ Client $\rightarrow$ User:} This is the response path.
+    \item The API acts as a secure bridge and ensures that internal server and database logic is not exposed to the client or user.
+    \item The Oracle database stores all persistent data, and the server retrieves only what is needed for computing recommendations.
+    \item The server performs the actual recommendation computation, including vector lookups, nearest-neighbor searches, and optional personalization.
+\end{itemize}
