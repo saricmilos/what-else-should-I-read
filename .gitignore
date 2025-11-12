@@ -30,7 +30,13 @@ Thumbs.db
 *.jpg
 
 # Latex
+#Report
 *.fls
 *.fdb_latexmk
 *.aux
 *.synctex.gz
+#Slides
+*.nav
+*.snm
+*.toc
+*.out
