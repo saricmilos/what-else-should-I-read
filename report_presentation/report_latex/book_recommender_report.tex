@@ -1113,3 +1113,127 @@ From the user's perspective, it feels seamless—they just type a book name and 
     \item The Oracle database stores all persistent data, and the server retrieves only what is needed for computing recommendations.
     \item The server performs the actual recommendation computation, including vector lookups, nearest-neighbor searches, and optional personalization.
 \end{itemize}
+
+\section{Exploratory Data Analysis (EDA) and Data Preparation}
+
+We begin by loading our datasets and cleaning column names for consistency.
+We remove leading/trailing spaces, convert all names to lowercase, and replace dashes (\texttt{-})
+with underscores (\texttt{\_}). This makes the DataFrame easier to work with in subsequent analysis.
+
+
+\subsection{Books Dataframe}
+
+Our books dataset contains several key columns:  
+\textbf{isbn} (unique book identifier), \textbf{book\_title} (title of the book), \textbf{book\_author} (author name), \textbf{year\_of\_publication} (publication year), \textbf{publisher} (publisher name), and \textbf{image\_url\_s/m/l} (small, medium, and large book cover images). For analysis, the image columns (\texttt{image\_url\_s}, \texttt{image\_url\_m}, \texttt{image\_url\_l}) are dropped as they are not needed.  
+All remaining attributes are of type \texttt{object}.
+
+The dataset contains \textbf{271,360 book entries}. Key observations include:
+
+\begin{itemize}
+  \item \textbf{\texttt{isbn}} \- Every book has a unique ISBN, making it a perfect \textbf{unique identifier}.
+  \item \textbf{\texttt{book\_title}} \- There are \textbf{242,135 unique titles} (about \textbf{89\%} of entries). Most titles are unique, though some duplicates exist, likely due to \textit{different editions or reissues}. For example, \textit{Selected Poems} appears 27 times with different ISBNs.
+  \item \textbf{\texttt{book\_author}} \- Around \textbf{102,022 unique authors} are present, meaning each author has, on average, about \textbf{2–3 books}.
+  \item \textbf{\texttt{publisher}} \- Only \textbf{16,807 unique publishers} appear (roughly \textbf{6\%} of entries), which is expected since many books come from the same publisher. \textit{Harlequin} is the most common.
+  \item \textbf{\texttt{year\_of\_publication}} \- There are just \textbf{202 distinct years}, typical because many books share the same publication year. \textbf{2002} is the most frequent year, appearing in 13,903 books.
+\end{itemize}
+
+\noindent
+Overall, the dataset is consistent: \textbf{ISBNs are unique}, while other fields naturally repeat due to multiple books by the same authors, publishers, or publication years.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/books_df/unique_values.png} % path to your image
+    \caption{Unique Values Books DataFrame}
+    \label{fig:books_df_unique}
+\end{figure}
+
+All book related columns are mostly complete. The `book_author` and `publisher`
+columns each have only 2 missing values out of 271,360 entries, while all other columns are fully populated.  
+
+There are two books with missing authors: "A+ Quiz Masters:01 Earth" (ISBN 0751352497)
+and "The Credit Suisse Guide to Managing Your Personal Finances" (ISBN 9627982032).
+We looked up the correct author information online and filled them as "Dorling Kindersley Publishing Staff"
+and "Credit Suisse," respectively.  
+
+Similarly, two books had missing publishers: "Tyrant Moon" (ISBN 193169656X) and "Finders Keepers" (ISBN 1931696993).
+We searched for the correct publishers and updated them to "Mundania Press LLC" and "Random House Publishing Group."  
+
+After these corrections, all books now have complete information for both authors and publishers.
+
+\subsection{Ratings Dataframe}
+
+Our ratings dataset contains three columns: \textbf{user\_id}, \textbf{isbn}, and \textbf{book\_rating}, with approximately 1,149,780 entries. 
+There are no missing values. The \textbf{user\_id} column is just an identifier, so statistics like mean or std are not meaningful. 
+The \textbf{book\_rating} column ranges from 0 (book read but not rated) to 10, with a mean of 2.87 and a standard deviation of 3.85,
+indicating high variability. About 50\% of ratings are 0 and 75\% are below 7, showing a sparse ratings matrix typical of recommendation datasets. 
+
+\textbf{Data types:} \textit{isbn} is categorical, \textit{user\_id} and \textit{book\_rating} are integers.  
+\textbf{Unique values:} isbn: 340,556 (\(\sim\)30\%), user\_id: 105,283 (\(\sim\)9\%), book\_rating: 11 (0--10).
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/ratings_df/ratings_df_unique_values.png} % path to your image
+    \caption{Unique Values Ratings DataFrame}
+    \label{fig:ratings_df_unique}
+\end{figure}
+
+Many books were rated by multiple users, and many users rated multiple books.
+
+
+\subsection{Users Dataframe}
+
+We start by preprocessing the \texttt{location} column in the user dataset. User-entered locations are often messy: typos, alternate spellings, subregions, or single-entry countries. Our goal is to standardize and simplify these values.
+
+\begin{itemize}
+  \item \textbf{split\_location(df):} Splits the \texttt{location} column into \texttt{city}, \texttt{state}, and \texttt{country}, trims whitespace, and fills missing values with \texttt{'unknown'}.
+  \item \textbf{clean\_country(df, country\_mapping, region\_mapping):} Standardizes country names, groups rare countries into \texttt{'other'}, removes quotes/empty strings, maps each country to a \texttt{region}, and drops the original \texttt{country} column.
+  \item \textbf{clean\_city(df, top\_n=50):} Cleans city names, replaces invalid/missing entries with \texttt{'unknown'}, keeps only the top N frequent cities, labels the rest as \texttt{'other'}, and drops the original column.
+  \item \textbf{clean\_state(df, top\_n=50):} Similar to \texttt{clean\_city}, but for states.
+  \item \textbf{preprocess\_location(df, ...):} Runs all the above steps and returns cleaned columns: \texttt{city\_clean}, \texttt{state\_clean}, \texttt{country\_clean}, and \texttt{region}.
+\end{itemize}
+
+Overall, this process transforms messy location data into standardized, manageable categories suitable for analysis or modeling.
+
+The dataset contains \textbf{278,858 users}, but only \textbf{168,096 have a recorded age}, meaning roughly \textbf{110,000 users did not provide their age}.  
+
+The \texttt{user\_id} column is fully unique and serves as a reliable identifier. Its average value (\textasciitilde 139,429) is not meaningful.  
+The \texttt{age} column has an average of approximately \textbf{35 years} with a standard deviation of about \textbf{14 years}, indicating a fairly wide spread.
+
+Examining the age distribution:
+\begin{itemize}
+  \item The \textbf{youngest recorded age is 0}, which is clearly invalid or missing.  
+  \item \textbf{25\% of users are younger than 24}, and \textbf{50\% are younger than 32} (median).  
+  \item \textbf{75\% are younger than 44}, meaning most users fall between their mid-20s and mid-40s.  
+  \item The \textbf{maximum recorded age is 244}, an obvious outlier or error.
+\end{itemize}
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/users_df/missing_values.png} % path to your image
+    \caption{Missing Values Users DataFrame}
+    \label{fig:missing_values_users_df}
+\end{figure}
+
+Regarding column uniqueness:
+\begin{itemize}
+  \item \texttt{user\_id} is fully unique (100\%), serving as a unique identifier.  
+  \item \texttt{age} has 165 unique values (\textasciitilde 0.06\%), highlighting the presence of outliers.  
+  \item \texttt{country\_clean} has 131 unique entries (\textasciitilde 0.05\%), \texttt{city\_clean} 51 (\textasciitilde 0.02\%), and \texttt{state\_clean} 50 (\textasciitilde 0.02\%).  
+  \item \texttt{region} is the least varied, with only 13 unique values (\textasciitilde 0.00\%).
+\end{itemize}
+
+Overall, the age data contains some missing and unrealistic values, but most users are in the \textbf{24\-44 year range}, and all other columns are largely complete and consistent.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/users_df/unique_values.png} % path to your image
+    \caption{Unique Values Users DataFrame}
+    \label{fig:unique_values_users_df}
+\end{figure}
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/users_df/unique_without_id.png} % path to your image
+    \caption{Unique Values Without ID Users DataFrame}
+    \label{fig:unique_values_without_id_users_df}
+\end{figure}
