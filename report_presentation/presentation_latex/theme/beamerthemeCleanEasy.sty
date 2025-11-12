@@ -1,0 +1,173 @@
+% Author: Milos A. Saric, copyright 2025. https://saricmilos.com/
+% Beamer theme "CleanEasy"
+
+\ProvidesPackage{beamerthemeCleanEasy}[2025/01/01 CleanEasy beamer theme]
+
+%--------------------------------------
+%  Color Settings
+%--------------------------------------
+\definecolor{MutedRed}{rgb}{0.97, 0.92, 0.92}
+\definecolor{MutedGreen}{rgb}{0.92, 0.97, 0.92}
+\definecolor{MutedBlue}{rgb}{0.92, 0.92, 0.97}
+\definecolor{MutedBlack}{rgb}{0.95, 0.95, 0.95}
+
+\definecolor{MediumRed}{rgb}{0.925, 0.345, 0.345}
+\definecolor{MediumGreen}{rgb}{0.37, 0.7, 0.66}
+\definecolor{MediumBlue}{rgb}{0.015, 0.315, 0.45}
+\definecolor{MediumBlack}{rgb}{0.219, 0.259, 0.349}
+
+\definecolor{DarkBlue}{rgb}{0.05, 0.15, 0.35}
+
+\usecolortheme[named=DarkBlue]{structure}
+
+% customize colors for elements
+\setbeamercolor{titlelike}{parent=structure}
+\setbeamercolor{block title}{fg=white,bg=MediumBlue}
+\setbeamercolor{block body}{fg=black,bg=MutedBlue}
+\setbeamercolor{block title example}{fg=white,bg=MediumGreen}
+\setbeamercolor{block body example}{fg=black,bg=MutedGreen}
+\setbeamercolor{block title alerted}{fg=white,bg=MediumRed}
+\setbeamercolor{block body alerted}{fg=black,bg=MutedRed}
+
+%--------------------------------------
+%  Font Settings
+%--------------------------------------
+\renewcommand{\familydefault}{\rmdefault}
+\setbeamerfont{structure}{family=\rmfamily,series=\mdseries}
+\setbeamerfont{title}{size=\LARGE,series=\bfseries,parent=structure}
+\setbeamerfont{subtitle}{size=\normalsize,parent=title}
+\setbeamerfont{date}{size=\scriptsize,series=\mdseries,parent=structure}
+\setbeamerfont{author}{size=\large,series=\mdseries,parent=structure}
+\setbeamerfont{institute}{size=\scriptsize,series=\mdseries,parent=structure}
+\setbeamerfont{section in toc}{size=\large,series=\bfseries,parent=structure}
+\setbeamerfont{section in head/foot}{size=\tiny,parent=structure}
+\setbeamerfont{subsection in toc}{size=\small,series=\mdseries,parent={section in toc}}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries,parent=structure}
+\setbeamerfont{framesubtitle}{parent=frametitle,size=\large}
+\setbeamerfont{caption}{size=\footnotesize}
+\setbeamerfont{item}{parent=structure,series=\mdseries}
+\setbeamerfont{block title}{size=\large,series=\mdseries,parent={structure,block body}}
+
+\usefonttheme{professionalfonts}
+\usepackage{cmbright}
+
+%--------------------------------------
+%  Inner Theme Settings
+%--------------------------------------
+\pgfdeclareverticalshading[lower.bg,upper.bg]{bmb@transition}{200cm}{%
+color(0pt)=(lower.bg); color(2pt)=(lower.bg); color(4pt)=(lower.bg)}
+
+\setbeamersize{text margin left=2em,text margin right=2em}
+
+\setbeamertemplate{footline}[frame number]
+\setbeamertemplate{navigation symbols}{}
+
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{enumerate subitem}[default]
+\setbeamertemplate{itemize items}[circle]
+\setbeamertemplate{itemize subitem}[circle]
+
+% table of contents (overview) settings
+\setbeamertemplate{section in toc}[sections numbered]
+\setbeamertemplate{subsection in toc}{%
+    \leavevmode
+    \leftskip=3.2em
+    \rlap{\hskip-2em\inserttocsectionnumber.\inserttocsubsectionnumber}
+    \inserttocsubsection\par
+}
+
+% frame title customization
+\setbeamertemplate{frametitle}{%
+    \vspace*{0.5em}
+    \bfseries\insertframetitle\par
+    \vskip-6pt
+    \hrulefill\vspace{-0.1em}
+}
+
+% title page customization
+\setbeamertemplate{title page}{%
+    \vspace{6em}
+    \begingroup
+    \centering
+    % ------------------------
+    \begin{beamercolorbox}[sep=10pt,center]{title}
+        \usebeamerfont{title}\inserttitle\par%
+        \ifx\insertsubtitle\@empty%
+        \else%
+        \vskip0.25em%
+        {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}%
+        \fi%
+    \end{beamercolorbox}%
+    \vskip0.5em\par
+    % ------------------------
+    \begin{beamercolorbox}[sep=8pt,center]{author}
+        \usebeamerfont{author}\insertauthor
+    \end{beamercolorbox}
+    \vskip-1em
+    % ------------------------
+    \begin{beamercolorbox}[sep=8pt,center]{institute}
+        \usebeamerfont{institute}\insertinstitute
+    \end{beamercolorbox}
+    % ------------------------
+    \begin{beamercolorbox}[sep=8pt,center]{date}
+        \usebeamerfont{date}\insertdate
+    \end{beamercolorbox}\vskip0.5em
+    % ------------------------
+    {\usebeamercolor[fg]{titlegraphic}\inserttitlegraphic\par}
+    \endgroup
+    \vfill
+}
+
+%--------------------------------------
+%  Outer Theme Settings
+%--------------------------------------
+\defbeamertemplate*{footline}{CleanEasy theme}{%
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.2\paperwidth,ht=2.25ex,dp=1ex,left]{author in head/foot}%
+      \usebeamerfont{author in head/foot}\hspace*{3ex}\textcolor{fg!30}{\insertshortauthor} \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.65\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+      \usebeamerfont{title in head/foot}\textcolor{fg!30}{\insertshorttitle}
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.15\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+      \usebeamerfont{date in head/foot}\textcolor{fg!30}{\insertshortdate{}\hspace*{2ex} \insertframenumber{}/\inserttotalframenumber}\hspace*{2ex}
+    \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\defbeamertemplate{footline}{empty}{}
+
+\defbeamertemplate*{headline}{CleanEasy theme}{%
+  % empty headline by default
+}
+
+\defbeamertemplate*{section page}{CleanEasy theme}{%
+  \begin{centering}
+    \begin{beamercolorbox}[sep=12pt,center]{part title}
+      \usebeamerfont{section title}\insertsection\par
+    \end{beamercolorbox}
+  \end{centering}
+}
+
+% Section page hook
+\AtBeginSection[] {
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture,overlay]
+      \fill[MediumBlue!5] (current page.north west) rectangle (current page.south east);
+      \node[
+        anchor=west,
+        text width=0.6\paperwidth,
+        align=left,
+        font=\Large\bfseries
+      ] at ([xshift=-2cm]current page.center) {
+        \insertsectionhead
+      };
+      \draw[thick, DarkBlue!40] 
+        ([xshift=-2cm, yshift=-1cm]current page.center) -- ++(\paperwidth/2,0);
+    \end{tikzpicture}
+  \end{frame}
+}
+
+\endinput

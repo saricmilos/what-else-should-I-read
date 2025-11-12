@@ -1,0 +1,21 @@
+% Author: Milos A. Saric, copyright 2025. https://saricmilos.com/
+
+\documentclass[aspectratio=169,xcolor=dvipsnames]{beamer}
+\input{presentation_setup}
+\usetheme{CleanEasy}
+
+% --- add logo after the theme is loaded (this will not be overwritten) ---
+\makeatletter
+\addtobeamertemplate{background canvas}{}{% append to background canvas (appears on every frame)
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north east, xshift=-5pt, yshift=-5pt] at (current page.north east) {%
+      \includegraphics[height=0.9cm]{MS.png}%
+    };
+  \end{tikzpicture}%
+}
+\makeatother
+% ------------------------------------------------------------------------
+
+\begin{document}
+\include{presentation}
+\end{document}
