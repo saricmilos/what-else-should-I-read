@@ -979,89 +979,12 @@ Having an app on our local system simply isn't enough, it needs to be accessible
 Deployment is the process of making your application available for users so they can access and interact with it.
 It usually means moving your code from a development environment to a live production environment, where the application is fully operational.
 
-\begin{center}
-    
-\begin{tikzpicture}[node distance=2cm]
-
-% Nodes
-\node (user) [startstop] {User / Client};
-\node (api) [process, below of=user] {API Gateway / Load Balancer};
-\node (server) [process, below of=api] {Web / Application Server (AWS / Render)};
-\node (processing) [process, below of=server] {Data Processing Layer (PySpark)};
-\node (database) [database, below of=processing] {Oracle Database};
-\node (response) [startstop, below of=database] {Response sent back to User};
-
-% Arrows
-\draw [arrow] (user) -- (api);
-\draw [arrow] (api) -- (server);
-\draw [arrow] (server) -- (processing);
-\draw [arrow] (processing) -- (database);
-\draw [arrow] (database) -- (response);
-
-\end{tikzpicture}
-\end{center}
-
-\subsection{Application Programming Interface (API)}
-
-An API, short for Application Programming Interface, is basically a bridge that lets different software programs talk to each other.
-It defines a set of rules and protocols that allow applications to exchange data, features, or functionality. 
-Instead of building every feature from scratch, developers can use APIs to connect their apps with existing services or data sources,
-saving time and effort.
-APIs also give application owners a controlled and secure way to share certain parts of their app's data or capabilities—either with
-internal teams or with outside users. They’re designed to expose only the specific information or actions that are needed for a given 
-task, not the entire system. By doing this, APIs help protect sensitive information and maintain overall system security while still
-enabling smooth, efficient communication between different software systems.
-
-It helps to think of API communication as a conversation between a client and a server. In a book recommender system,
- the user's app—the client—sends a request, and the server responds with recommendations.
-  The API is the bridge that makes this connection possible.
-
-Here's how it works in practice: imagine a user types in the name of a book they like. When they hit “Submit,” 
-the app sends this information as a request through the API. 
-The request travels to the server, which runs a trained recommendation model to find books similar to the one the user entered.
-
-The server then sends back a response containing a list of recommended books. 
-The API takes this data and delivers it to the app, so the user sees their personalized recommendations almost instantly.
-
-From the user's perspective, it feels seamless—they just type a book name and get suggestions.
- Behind the scenes, though, the API is carefully handling the request and response, sharing only the information needed, 
- keeping the system secure, and making sure the app and server communicate smoothly.
-
-\begin{tikzpicture}[
-  box/.style={draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, align=center, fill=#1!30, text centered},
-  arrow/.style={-{Stealth[length=2.5mm]}, thick, color=#1},
-  node distance=1.5cm
-]
-
-% Top row nodes
-\node[box=blue] (user) {User \\ (types book name)};
-\node[box=green, right=of user] (client) {Client App \\ (sends request)};
-\node[box=orange, right=of client] (api) {API \\ (handles request/response)};
-\node[box=red, right=of api] (server) {Server \\ (runs recommendation model)};
-
-% Bottom response row
-\node[box=purple, below=1.5cm of api] (response) {Response \\ (recommended books)};
-
-% Top arrows (request)
-\draw[arrow=blue] (user) -- (client);
-\draw[arrow=green] (client) -- (api);
-\draw[arrow=orange] (api) -- (server);
-
-% Response arrows
-\draw[arrow=red] (server.south) -- (response.north);
-\draw[arrow=purple] (response.north) -- (api.south);
-
-% Return arrows to client and user
-\draw[arrow=orange] (api.west) -- ++(-0.9,0) |- (client.south);
-\draw[arrow=green] (client.north) -- ++(-0.9,0) |- (user.south);
-
-\end{tikzpicture}
 
 \begin{enumerate}
     \item \textbf{User Input:} The user types a book title (and optionally a user ID) in the application interface.
-    \item \textbf{Client App:} The client app collects the input and formats it into an API request (e.g., JSON) that is sent to the API.
+    \item \textbf{User Interface / Front END:} The user using frontent sends a request and formats it into an API request (e.g., JSON) that is sent to the API.
     \item \textbf{API:} The API acts as a gateway. It receives the request, validates it, and forwards it to the server. It also ensures that only necessary information is exchanged, keeping internal details secure.
-    \item \textbf{Server:} The server runs the recommendation logic:
+    \item \textbf{Server / Client APP / Backend:} The server runs the recommendation logic:
         \begin{itemize}
             \item Looks up the book embedding from the Oracle database or computes it if it’s free text.
             \item Performs a nearest-neighbor search in the embedding space to find similar books.
@@ -1081,9 +1004,9 @@ From the user's perspective, it feels seamless—they just type a book name and 
 
 % Top row nodes
 \node[box=blue] (user) {User \\ (types book name)};
-\node[box=green, right=of user] (client) {Client App \\ (sends request)};
+\node[box=green, right=of user] (client) {User Interface \\ (sends request)};
 \node[box=orange, right=of client] (api) {API \\ (handles request/response)};
-\node[box=red, right=of api] (server) {Server \\ (runs recommendation model)};
+\node[box=red, right=of api] (server) {Server / Client App \\ (runs recommendation model)};
 \node[box=cyan, below=1.5cm of server] (db) {Oracle Database \\ (stores books, embeddings, user data)};
 \node[box=purple, below=1.5cm of api] (response) {Response \\ (recommended books)};
 
@@ -1105,14 +1028,41 @@ From the user's perspective, it feels seamless—they just type a book name and 
 \end{tikzpicture}
 \end{center}
 
-\subsection*{Notes on the Flow}
 \begin{itemize}
-    \item \textbf{User $\rightarrow$ Client $\rightarrow$ API $\rightarrow$ Server $\rightarrow$ Database:} This is the request path.
-    \item \textbf{Database $\rightarrow$ Server $\rightarrow$ API $\rightarrow$ Client $\rightarrow$ User:} This is the response path.
+    \item \textbf{User $\rightarrow$ User Interface $\rightarrow$ API $\rightarrow$ Server/Client App $\rightarrow$ Database:} This is the request path.
+    \item \textbf{Database $\rightarrow$ Server/Client App $\rightarrow$ API $\rightarrow$ User Interface $\rightarrow$ User:} This is the response path.
     \item The API acts as a secure bridge and ensures that internal server and database logic is not exposed to the client or user.
     \item The Oracle database stores all persistent data, and the server retrieves only what is needed for computing recommendations.
     \item The server performs the actual recommendation computation, including vector lookups, nearest-neighbor searches, and optional personalization.
 \end{itemize}
+
+
+\subsection{Application Programming Interface (API)}
+
+An API, short for Application Programming Interface, is basically a bridge that lets different software programs talk to each other.
+It defines a set of rules and protocols that allow applications to exchange data, features, or functionality. 
+Instead of building every feature from scratch, developers can use APIs to connect their apps with existing services or data sources,
+saving time and effort.
+APIs also give application owners a controlled and secure way to share certain parts of their app's data or capabilities—either with
+internal teams or with outside users. They're designed to expose only the specific information or actions that are needed for a given 
+task, not the entire system. By doing this, APIs help protect sensitive information and maintain overall system security while still
+enabling smooth, efficient communication between different software systems.
+
+It helps to think of API communication as a conversation between a client and a server. In a book recommender system,
+ the user's app—the client—sends a request, and the server responds with recommendations.
+  The API is the bridge that makes this connection possible.
+
+Here's how it works in practice: imagine a user types in the name of a book they like. When they hit “Submit,” 
+the app sends this information as a request through the API. 
+The request travels to the server, which runs a trained recommendation model to find books similar to the one the user entered.
+
+The server then sends back a response containing a list of recommended books. 
+The API takes this data and delivers it to the app, so the user sees their personalized recommendations almost instantly.
+
+From the user's perspective, it feels seamless—they just type a book name and get suggestions.
+ Behind the scenes, though, the API is carefully handling the request and response, sharing only the information needed, 
+ keeping the system secure, and making sure the app and server communicate smoothly.
+
 
 \section{Exploratory Data Analysis (EDA) and Data Preparation}
 
@@ -1147,8 +1097,7 @@ Overall, the dataset is consistent: \textbf{ISBNs are unique}, while other field
     \label{fig:books_df_unique}
 \end{figure}
 
-All book related columns are mostly complete. The `book_author` and `publisher`
-columns each have only 2 missing values out of 271,360 entries, while all other columns are fully populated.  
+All book related columns are mostly complete. The book author and publisher columns each have only 2 missing values out of 271,360 entries, while all other columns are fully populated.  
 
 There are two books with missing authors: "A+ Quiz Masters:01 Earth" (ISBN 0751352497)
 and "The Credit Suisse Guide to Managing Your Personal Finances" (ISBN 9627982032).
