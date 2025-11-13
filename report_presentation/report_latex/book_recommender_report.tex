@@ -1109,6 +1109,61 @@ We searched for the correct publishers and updated them to "Mundania Press LLC" 
 
 After these corrections, all books now have complete information for both authors and publishers.
 
+We further explored the dataset by plotting value counts and found that the authors
+with the most published books are Agatha Christie (632), William Shakespeare (567),
+Stephen King (524), Ann M. Martin (423), and Carolyn Keene (373). The publishers with
+the most books are Harlequin (7,535), Silhouette (4,220), Pocket (3,905), and Ballantine
+Books (3,783).
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/books_df/top_author.png}
+        \caption{Author with most published books}
+        \label{fig:top_author}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/books_df/top_publisher.png}
+        \caption{Publisher with most published books}
+        \label{fig:top_publisher}
+    \end{minipage}
+\end{figure}
+
+The \texttt{year\_of\_publication} column is quite messy, containing a mix of valid and invalid entries.
+It includes integers like 1999 or 2002, strings that represent years such as "2000" or "1998",
+non year strings like publisher names ("DK Publishing Inc", "Gallimard"), and impossible or unrealistic
+years such as 0, 1378, 1806, 2030, and 2050.
+
+Interestingly, only a few rows contain genuinely non-numeric entries, even though there are over
+65,000 string values. Most of these strings are actually numeric ("1998", "2003", "0") and will 
+need to be converted to integers and cleaned before analysis. 
+
+To clean this column, we can convert all values to numeric using \texttt{pd.to\_numeric(errors='coerce')},
+which turns invalid entries into \texttt{NaN}. Then, we replace unrealistic years (less than 1000 or greater than 2025)
+with \texttt{NaN}, fill missing values with the median, and finally convert the column to integers. This ensures that \texttt{year\_of\_publication} 
+s consistent, numeric, and ready for analysis.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/books_df/historgram_publishing_age_from_from_1000.png} % path to your image
+    \caption{Histogram of Publication age}
+    \label{fig:publication_age}
+\end{figure}
+
+We can also notice from the histogram that very few books in our dataset were published before 1900, 
+so we can remove those values and keep only books published from 1900 onwards.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/books_df/historgram_publishing_age_from_from_1900.png} % path to your image
+    \caption{Histogram of Publication age from 1900}
+    \label{fig:publication_age_1900}
+\end{figure}
+
+
 \subsection{Ratings Dataframe}
 
 Our ratings dataset contains three columns: \textbf{user\_id}, \textbf{isbn}, and \textbf{book\_rating}, with approximately 1,149,780 entries. 
@@ -1128,6 +1183,32 @@ indicating high variability. About 50\% of ratings are 0 and 75\% are below 7, s
 
 Many books were rated by multiple users, and many users rated multiple books.
 
+The histogram shows the distribution of user ratings for books. A large number of users (716,109)
+did not provide a rating, which reflects real life behavior, most people enjoy a product and move
+on without leaving an online review. While this is natural, it poses a challenge for collaborative
+recommendation systems, as unrated items result in zero-length vectors and sparse data. For user-based 
+filtering, new users with few or no ratings make it hard to find similar users. For item-based filtering,
+new books with few ratings are difficult to recommend, leading to the cold start problem and sparse data
+issues.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/books_df/ratings_histogram.png}
+        \caption{Histogram of Ratings given}
+        \label{fig:ratings_gives}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/books_df/ratings_with_values.png}
+        \caption{Histogram of Ratings given with values}
+        \label{fig:ratings_with_values}
+    \end{minipage}
+\end{figure}
+
+Our ratings dataset contains no missing values.
 
 \subsection{Users Dataframe}
 
@@ -1171,7 +1252,7 @@ Regarding column uniqueness:
   \item \texttt{region} is the least varied, with only 13 unique values (\textasciitilde 0.00\%).
 \end{itemize}
 
-Overall, the age data contains some missing and unrealistic values, but most users are in the \textbf{24\-44 year range}, and all other columns are largely complete and consistent.
+Overall, the age data contains some missing and unrealistic values, but most users are in the \textbf{24 \- 44 year range}, and all other columns are largely complete and consistent.
 
 \begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
     \centering
@@ -1186,3 +1267,340 @@ Overall, the age data contains some missing and unrealistic values, but most use
     \caption{Unique Values Without ID Users DataFrame}
     \label{fig:unique_values_without_id_users_df}
 \end{figure}
+
+Most reader ratings come the USA leading at 139,599 ratings, followed by Canada (21,622), the United Kingdom (18,587), Germany (17,092), and Spain (13,313).
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/country_piechart.png}
+        \caption{Piechart of countries of user's who gave ratings}
+        \label{fig:piechar_country}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/country_barchart.png}
+        \caption{Histogram of countries of user's who gave ratings}
+        \label{fig:barchart_country}
+    \end{minipage}
+\end{figure}
+
+Most users are grouped under the category 'Other' because, during preprocessing, all less-popular cities were combined into this category. Excluding 'Other', we can see that major cities dominate user ratings, with London (4,105), Barcelona (2,664), Toronto (2,342), Madrid (1,933), Sydney (1,884), Chicago (1,566), and New York (1,445) leading the list.
+
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/piechart_city.png}
+        \caption{Piechart of cities of user's who gave ratings}
+        \label{fig:piechart_city}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/piechar_city_no_other.png}
+        \caption{Piechar of cities of user's who gave ratings}
+        \label{fig:piechart_city_no_other}
+    \end{minipage}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/barchart_city.png}
+        \caption{Barchart of cities of user's who gave ratings}
+        \label{fig:barchart_city}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/barchart_city_no_other.png}
+        \caption{Barchart of cities of user's who gave ratings}
+        \label{fig:barchart_city_no_other}
+    \end{minipage}
+\end{figure}
+
+The \texttt{age} column in our dataset is \textbf{not normally (Gaussian) distributed}. 
+It is heavily skewed, with many extreme values, which makes standard outlier detection methods,
+such as the Interquartile Range (IQR), inadequate for this data. Which we can notice and compare with 
+normal Gaussian distribution on following histograms:
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/age_histogram.png}
+        \caption{Age Histogram}
+        \label{fig:age_histogram}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/normal_distribution_histogram.png}
+        \caption{Normal Gaussian distribution histogram}
+        \label{fig:normal_histogram}
+    \end{minipage}
+\end{figure}
+
+Using the IQR method:
+
+\[
+\text{IQR} = Q3 - Q1
+\]
+
+\begin{itemize}
+    \item \textbf{Lower bound:} $Q1 - 1.5 \times \text{IQR} = 24 - 1.5 \times 30 = -6$  
+    This is meaningless, as it would leave negative ages or zeros, which are invalid.
+    \item \textbf{Upper bound:} $Q3 + 1.5 \times \text{IQR} = 44 + 1.5 \times 30 = 74$  
+    This is too low, as it would incorrectly remove valid older users aged 75 \- 99.
+\end{itemize}
+
+The IQR method alone is insufficient for this dataset. Instead, explicit filtering is required to ensure realistic and meaningful values. We choose to remove ages below 5 and above 99, which preserves the majority of valid data while removing unrealistic outliers.
+
+The \texttt{age} column contains 168,096 entries with a mean of 34.75 and a standard deviation of 14.43.
+The values range from 0 to 244, with the 25th, 50th, and 75th percentiles at 24, 32, and 44, respectively.
+The standard deviation, $\sigma$, measures how spread out the values are around the mean and is calculated as
+
+\begin{equation}
+\sigma = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (x_i - \mu)^2}
+\end{equation}
+
+where $x_i$ represents each individual age, $\mu$ is the mean age, and $N$ is the total number of entries.
+In this dataset, the high value of $\sigma = 14.43$ reflects the presence of many extreme outliers,
+which is evident in boxplots where ages far beyond the typical range appear as points outside the whiskers.
+
+For comparison, a standard normal (Gaussian) distribution with a mean around 50 and a standard 
+deviation of 9.69 has values mostly concentrated between 17 and 84. Unlike this idealized normal distribution,
+our \texttt{age} data is heavily skewed.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/boxplot_age.png}
+        \caption{Age Boxplot}
+        \label{fig:age_boxplot}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.28\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/boxplot_gaussian.png}
+        \caption{Normal Gaussian distribution Boxplot}
+        \label{fig:normal_boxplot}
+    \end{minipage}
+\end{figure}
+
+After removing unrealistic ages below 5 and above 100, there are still a large number of missing values,
+with 112,043 rows lacking an \texttt{age}. Dropping these rows would cause significant data loss,
+so we impute them using a random method based on the existing age distribution. This approach uses the
+median to center the distribution, the standard deviation to preserve the spread, and ensures that 
+generated ages stay within the realistic range of 5 to 100. The imputed values are rounded to integers,
+maintaining a discrete age variable. After imputation, the overall age distribution remains similar to 
+the original data, no extreme outliers are introduced, and all ages fall within a plausible range.
+The final histogram and boxplot confirm that the distribution looks realistic.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/age_histogram_final.png}
+        \caption{Age Histogram Final}
+        \label{fig:age_histogram_final}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/users_df/age_boxplot_final.png}
+        \caption{Age Boxplot Final}
+        \label{fig:age_boxplot_final}
+    \end{minipage}
+\end{figure}
+
+\subsection{Merging datasets and Feature engineering}
+
+We merge our datasets to continue cleaning and enriching the data, allowing us to create new features
+and gain deeper insights. The \texttt{users\_df} (278,858 rows, 6 columns) is merged with the
+\texttt{ratings\_df} (1,149,780 rows, 3 columns) on the \texttt{user\_id} column. Each resulting 
+row represents a rating linked to the corresponding user's information. 
+
+By default, \texttt{pd.merge()} performs an inner join, which keeps only the \texttt{user\_id}s that
+exist in both datasets. Users without ratings, or ratings without matching user information, are excluded
+from the result.
+
+When merging with the books dataset, we join on the \texttt{isbn} column rather than
+\texttt{book\_title}, since \texttt{isbn} uniquely identifies each book edition.
+In contrast, \texttt{book\_title} is not unique, multiple editions may share the same title, 
+and inconsistencies such as typos or casing differences can lead to duplicate rows, 
+incorrect matches, or missing records. Joining on \texttt{isbn} ensures accuracy and consistency 
+across datasets.
+
+We can observe that the books with the most ratings and highest average scores include popular titles
+such as *The Da Vinci Code*, *Harry Potter and the Sorcerer's Stone*, *To Kill a Mockingbird*, and *The Lovely Bones*. 
+The overall average rating across all books is around 4.2. However, as seen earlier, many users gave a 
+rating of 0. These represent readers who read the book but did not actually rate it. After removing all 0
+ratings, only two books have more than 500 valid ratings: *The Lovely Bones* by Alice Sebold, with an impressive average 
+score of 8.18, and *Wild Animus* by Rich Shapero, with an average score of 4.39.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/merged_df/zero_500.png}
+        \caption{Most popular books with more than 500 ratings (0 ratings included)}
+        \label{fig:zero_500}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/merged_df/no_zero_500.png}
+        \caption{Most popular books with more than 500 ratings (NO 0 ratings included)}
+        \label{fig:no_zero_500}
+    \end{minipage}
+\end{figure}
+
+After removing all zero ratings, we can see which books received the most genuine user feedback. 
+Among books with more than 300 ratings, popular titles such as *Harry Potter and the Sorcerer's Stone*, 
+*The Da Vinci Code*, *Life of Pi*, and *The Lovely Bones* dominate the list, each with average scores 
+above 8. These books are well-known bestsellers, suggesting a strong link between popularity and the
+number of user ratings.
+
+When we raise the threshold to 400 ratings, only four books remain: *The Da Vinci Code* by Dan Brown,
+*The Lovely Bones* by Alice Sebold, *The Secret Life of Bees* by Sue Monk Kidd, and *Wild Animus*
+by Rich Shapero. Interestingly, while the first three books maintain high average ratings around 8, 
+*Wild Animus* stands out with a much lower score of 4.39, indicating that a large number of ratings 
+does not always correlate with positive feedback.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/merged_df/no_zero_300.png}
+        \caption{Most popular books with more than 300 ratings (NO 0 ratings included)}
+        \label{fig:no_zero_300}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/merged_df/no_zero_400.png}
+        \caption{Most popular books with more than 400 ratings (NO 0 ratings included)}
+        \label{fig:no_zero_400}
+    \end{minipage}
+\end{figure}
+
+\subsubsection{User Level Features}
+
+We generate user-level features to better understand our dataset and capture user behavior.
+These include the average rating each user gives (\texttt{user\_avg\_rating}), the total number of ratings
+per user (\texttt{user\_num\_ratings}), and the consistency of their ratings measured by
+the standard deviation (\texttt{User\_rating\_variability}). All these features are collected
+in a separate dataframe for easier analysis. Examining the results, we notice that most users rated
+only one book (39,223 users), with a rapid drop for two or three ratings, highlighting a significant
+cold start problem that challenges user-based recommendation approaches. Nonetheless, some users are 
+highly active, rating hundreds of books, which can still provide valuable patterns for generating 
+recommendations.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/merged_df/users_rated_k_books.png} % path to your image
+    \caption{How many users rated K books}
+    \label{fig:users_rated_k_books}
+\end{figure}
+
+Also we can observe average ratings per user.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/merged_df/average_user_ratings.png} % path to your image
+    \caption{Average rating per user}
+    \label{fig:average_ratings_per_user}
+\end{figure}
+
+We create a user age group feature by dividing ages into five ranges:
+0--18, 18--25, 25--35, 35--50, and 50--100, and assigning numeric codes from 1 to 5.
+Since many users rate only one book and many books are rated by only one user, the standard deviation 
+of ratings cannot be calculated for these cases. We replace these missing variability values with 0,
+indicating no variation in their ratings.
+
+\subsubsection{Book Level Features}
+
+We create book-level features to better understand and analyze our dataset. 
+These include the average rating for each book (\texttt{book\_avg\_rating}),
+the total number of ratings per book (\texttt{book\_num\_ratings}), the variation
+in book ratings measured by standard deviation (\texttt{book\_rating\_variability}),
+and a popularity metric that combines average rating with the number of ratings (\texttt{book\_popularity\_score}). 
+A summary dataframe is then generated containing these unique book-level features. Examining the number of ratings per book,
+most books were rated only once (88,137 books), with the count dropping sharply for two or three ratings. This highlights the sparsity
+of the dataset, which can make it harder for item-based collaborative filtering to find similar books. Nevertheless, 
+some books received hundreds of ratings, with a few exceeding 500, showing that popular books can still provide strong signals for recommendations.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/merged_df/books_recieved_k_ratings.png} % path to your image
+    \caption{How many books recieved K books}
+    \label{fig:books_recieved_k_books}
+\end{figure}
+
+We analyze the distribution of average ratings per book to see how many books received each specific rating.
+Most books cluster around high-range ratings, while a small amount of books achieve very low averages.
+This gives insight into the overall perception of books in the dataset and helps identify highly rated or unpopular books.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/EDA/merged_df/ratings_distribution_book.png} % path to your image
+    \caption{Books Average Rating Distribution}
+    \label{fig:books_rating_distribution}
+\end{figure}
+
+\subsubsection{Location, Author, Publisher Level Features, Additional Plots and Insights}
+
+We can extract additional features to gain deeper insights from our dataset.
+This includes location based features such as the average rating per country (\texttt{country\_avg\_rating}), 
+per region (\texttt{region\_avg\_rating}), and per city (\texttt{city\_avg\_rating}).
+We also capture personal bias with \texttt{user\_country\_rating\_bias}, which measures the difference between a user's average rating and their country's average, 
+and we track the local popularity of books using \texttt{book\_country\_avg\_rating}, the average rating of each book within each country.
+
+Additional features are created at different levels, including author level features such as \texttt{author\_avg\_rating},
+the average rating of all books by each author, and publisher level features such as \texttt{publisher\_avg\_rating},
+the average rating of all books by each publisher. We also compute the age of each book (\texttt{book\_age}) as the difference between the current year (2025) and its year of publication, 
+providing context for temporal analysis of ratings.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/merged_df/rating_popularity.png}
+        \caption{Books average rating and book popularity}
+        \label{fig:no_zero_300}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/merged_df/harry_potter_age.png}
+        \caption{Harry Potter Ratings and User Age}
+        \label{fig:harry_potter}
+    \end{minipage}
+\end{figure}
+
+Heatmaps showing correlation between authors, publishers and user ages.
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/merged_df/publisher_age_heatmap.png}
+        \caption{Publisher user age heatmap}
+        \label{fig:publisher_heatmap}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/EDA/merged_df/author_age_heatmap.png}
+        \caption{Author user age heatmap}
+        \label{fig:author_heatmap}
+    \end{minipage}
+\end{figure}
+

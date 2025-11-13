@@ -5,7 +5,7 @@ import pandas as pd
 def plot_top_categories(df, column, top_n=10, orientation='h', palette='pastel', show_percent=False, title=None):
     """
     Plot top N categories of a categorical column using a barplot.
-    
+
     Parameters:
         df (pd.DataFrame): DataFrame containing the column to plot
         column (str): Name of the categorical column
@@ -31,27 +31,29 @@ def plot_top_categories(df, column, top_n=10, orientation='h', palette='pastel',
         sns.barplot(x=counts.values, y=counts.index, palette=palette)
         plt.ylabel('')
         plt.xlabel(xlabel)
+        # Annotate bars
+        for i, value in enumerate(counts.values):
+            plt.text(value + max(counts.values)*0.01, i,
+                     f"{value:.1f}" if show_percent else f"{int(value)}",
+                     va='center')
     else:
         sns.barplot(x=counts.index, y=counts.values, palette=palette)
         plt.xlabel('')
         plt.ylabel(xlabel)
         plt.xticks(rotation=45, ha='right')
+        # Annotate bars at the correct x positions (use category names)
+        for i, (cat, value) in enumerate(zip(counts.index, counts.values)):
+            plt.text(cat, value + max(counts.values)*0.01,
+                     f"{value:.1f}" if show_percent else f"{int(value)}",
+                     ha='center')
     
     if title is None:
         title = f"Top {top_n} {column.replace('_',' ').title()}"
     
     plt.title(title, fontweight='bold')
-    
-    # Annotate bars with counts or percentages
-    for i, value in enumerate(counts.values):
-        if orientation == 'h':
-            plt.text(value + max(counts.values)*0.01, i, f"{value:.1f}" if show_percent else f"{int(value)}", va='center')
-        else:
-            plt.text(i, value + max(counts.values)*0.01, f"{value:.1f}" if show_percent else f"{int(value)}", ha='center')
-    
     plt.tight_layout()
     plt.show()
-
+    
 def plot_boxplot(df, column, by=None, title=None, xlabel=None, ylabel=None,
                  palette='pastel', figsize=(8,6), rotate_xticks=False, show=True):
     """
