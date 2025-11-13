@@ -144,15 +144,15 @@ def preprocess_books_ratings_users(
     # Merge datasets
     users_ratings = pd.merge(users_df, ratings_df, on='user_id')
     merged_df = pd.merge(users_ratings, books_df, on='isbn')
+
+    merged_df = merged_df[merged_df['book_rating']!=0]
     
     # Feature engineering
     merged_df['user_avg_rating'] = merged_df.groupby('user_id')['book_rating'].transform('mean')
     merged_df['user_num_ratings'] = merged_df.groupby('user_id')['book_rating'].transform('count')
-    merged_df['User_rating_variability'] = merged_df.groupby('user_id')['book_rating'].transform('std')
     
     merged_df['book_avg_rating'] = merged_df.groupby('book_title')['book_rating'].transform('mean')
     merged_df['book_num_ratings'] = merged_df.groupby('book_title')['book_rating'].transform('count')
-    merged_df['book_rating_variability'] = merged_df.groupby('book_title')['book_rating'].transform('std')
     merged_df['book_popularity_score'] = merged_df['book_avg_rating'] * np.log1p(merged_df['book_num_ratings'])
     
     merged_df['author_avg_rating'] = merged_df.groupby('book_author')['book_rating'].transform('mean')

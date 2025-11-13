@@ -78,7 +78,7 @@ Predictions are restricted to this dataset without using external sources unless
 \end{itemize}
 
 
-\section{Neighborhood-Based Collaborative Filtering}
+\section{Neighborhood-Based Collaborative Filtering}\label{sec:collaborative_filter}
 
 Collaborative filtering creates a model based on a user's past actions such as items they have purchased, selected, or
 rated, as well as the behavior of other users with similar preferences. This model is then used to recommend items or predict 
@@ -1604,3 +1604,208 @@ Heatmaps showing correlation between authors, publishers and user ages.
     \end{minipage}
 \end{figure}
 
+\section{Collaborative Filtering Models Building and Evaluation}
+
+As explained in detail in \hyperref[sec:collaborative_filter]{\textbf{collaborative\_filter}}, 
+this section implements the theoretical concepts discussed earlier. For collaborative filtering,
+the model only requires the core user\-item interactions: \texttt{user\_id}, \texttt{isbn} or encoded book title, 
+and \texttt{book\_rating}. Other metadata, such as user demographics or book averages, are not needed in standard CF,
+although they can be incorporated in hybrid approaches.
+
+CF works by capturing similarity patterns: users who rate similar books in similar ways, 
+and books that are rated similarly by similar users. Columns like age, country, or \texttt{author\_avg\_rating} 
+are considered side information. While these are not part of the core CF matrix, they can be useful for content based recommenders,
+hybrid models combining CF with features, or for deeper analytics and fairness evaluations.
+
+For a pure CF implementation, only the user\-item\-rating data is necessary. 
+It is also important to filter out inactive users and books with very few ratings,
+since new users and items lack sufficient interaction history to generate meaningful recommendations.
+
+To reduce the cold start problem, we first select users who have rated at least 10 books and books that 
+have received at least 10 ratings. After this initial filtering, some users or books may fall below the
+threshold because removing books decreases the number of ratings for users, and removing users decreases
+the number of ratings for books. This cascading effect requires iterative filtering: we repeatedly recompute
+the counts and apply the thresholds until the dataset stabilizes. Initially, 6,589 users meet the threshold
+of 10 ratings, and 5,712 books have been rated by at least 10 users. After applying iterative filtering,
+we are left with 2,272 books and 2,508 users, as removing users and books successively eliminates some ratings
+for the remaining items.
+
+After applying the iterative filtering, the distribution of user activity and book ratings is still extremely
+sparse. For users, only a small number have given many ratings: for example, 237 users rated exactly
+10 books, 202 rated 11 books, 171 rated 12, and so on, with very few users contributing more than 100 
+ratings. Similarly, for books, only a limited number have received many ratings: 289 books have exactly
+10 ratings, 261 have 11, 203 have 12, and the counts rapidly decline for higher numbers, with some 
+books receiving over 100 ratings but very few reaching the upper range. This highlights that even after
+filtering, the dataset remains extremely sparse, making collaborative filtering challenging and emphasizing
+the importance of focusing on the most active users and popular books.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/Model_building/user_rated_k_books.png} % path to your image
+    \caption{How many users have rated K books}
+    \label{fig:users_gave_k_rratings_train}
+\end{figure}
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/Model_building/books_have_k_ratings.png} % path to your image
+    \caption{How many books have recieved K rating}
+    \label{fig:books_recieved_k_ratings_train}
+\end{figure}
+
+We first set up the data split by reserving 20\% of each user's ratings for testing, using 
+a fixed random seed to ensure reproducibility. The dataframe is then grouped by user, and each 
+user's ratings are shuffled randomly. For each user, the first portion of their ratings is assigned
+to the test set, with the remainder going to the training set. If a user ends up with only one rating 
+in either set, one rating is moved to the training set to ensure every user appears in both sets. 
+The resulting \texttt{train\_df} contains all training ratings and \texttt{test\_df} contains all test ratings, 
+with indices reset for cleanliness. This procedure guarantees that all users are represented 
+in both train and test sets, allowing collaborative filtering models to be trained and evaluated 
+reliably. The final print statements confirm the number of rows and unique users in each split.
+
+We encode the \texttt{user\_id} and \texttt{book\_title} columns into numeric indices because collaborative filtering models require a user--item matrix with integer row and column indices. String IDs cannot be used directly in most matrix-based algorithms.
+
+Using \textbf{label encoding}, each unique user and book in the training set is assigned a distinct integer, stored in \texttt{user\_idx} and \texttt{book\_idx}. The same mapping is then applied to the test set to ensure consistency, so the same user or book always has the same index across both sets.
+
+After encoding, the number of unique users and books is printed, which should match the counts in the training set. This prepares the data for constructing the interaction matrix, where rows correspond to users, columns correspond to books, and entries represent ratings.
+
+In short, this step transforms categorical IDs into integers, enabling the creation of the user--item matrix required for collaborative filtering.
+
+
+\subsection{User Based CF}
+
+We construct a sparse matrix $\mathbf{R} \in \mathbb{R}^{m \times n}$ using \texttt{csr\_matrix}, 
+where each entry $R_{ui}$ represents the rating given by user $u$ to book $i$. 
+Rows correspond to users and columns correspond to books, defining the dimensions of the matrix. 
+Using a sparse matrix is memory efficient, since most users have rated only a small fraction of all books, 
+leaving the matrix mostly empty.
+
+
+In collaborative filtering, each user can be represented as a vector of their ratings.
+The length of a user vector reflects the magnitude of their ratings: a user who gives 
+many high ratings has a longer vector, while a user who gives few or low ratings has a 
+shorter vector. Cosine similarity, however, ignores vector length and focuses on the
+angle between vectors, capturing how similar the pattern of ratings is between users.
+This allows identification of users with similar preferences across books, even if their
+overall rating tendencies differ. By using top-K neighbors, we consider only the most similar
+users when generating recommendations.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/Model_building/user_user_cosine.png} % path to your image
+    \caption{User User cosine similarity heatmap}
+    \label{fig:user_user_cosine}
+\end{figure}
+
+Cosine similarity ranges from 0, indicating no similarity, to 1, indicating high similarity.
+In the heatmap, darker colors correspond to low similarity (closer to 0), while lighter colors
+indicate high similarity (closer to 1). Setting the diagonal to 0 removes self-similarity, ensuring 
+that each user is not considered similar to themselves when identifying neighbors.
+
+For each user, we first identify the top-$K$ most similar users from the user-user similarity matrix. 
+These neighbors serve as the basis for generating recommendations, as their ratings provide insight into what the target user might like. 
+
+To predict ratings, we calculate a weighted average of the neighbors' ratings for each user-item pair, 
+using the similarity scores between the target user and each neighbor as weights. 
+The resulting weighted sum is then normalized by the sum of similarity scores to ensure that the predicted ratings 
+are scaled appropriately. If none of the neighbors has rated a given item, a fallback strategy can be used, 
+such as the user's average rating or the global average rating across all users.
+
+This process is repeated for every user and every item, producing a full prediction matrix. 
+Each entry in this matrix represents the estimated rating that a particular user would give to a specific item, 
+allowing the system to make personalized recommendations.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/Model_building/user_book_predicted.png} % path to your image
+    \caption{User Book rating prediction matrix}
+    \label{fig:user_book_prediction}
+\end{figure}
+
+The evaluation metrics paint a brutally honest picture of the system's performance. 
+Precision and recall indicate how well the system recommends books that users actually like, 
+while MAE, MSE, and RMSE quantify how far the predicted ratings deviate from the true ratings.
+
+Looking at the top-$k$ metrics, Precision@5 is only 0.0542. 
+This means that out of the five books the system predicts a user will like most, 
+on average, only about one in twenty is actually relevant. 
+Even when increasing the recommendations to 20, Recall rises only to 0.1116, 
+so the system captures barely 11\% of the items a user truly rated. 
+Precision continues to drop as $k$ increases, indicating that recommending more items 
+mostly adds irrelevant books. This performance is painfully low, though not surprising 
+given the extreme sparsity typical of book rating datasets.
+
+The rating prediction errors are equally harsh. 
+A mean absolute error (MAE) of 7.3627 and a root mean squared error (RMSE) of 7.6219 
+mean that, on average, the predicted rating is off by more than 7 points on a typical 1--10 scale. 
+The mean squared error (MSE) of 58.0931 highlights that some predictions are catastrophically wrong. 
+In practice, this suggests that the model is essentially guessing most of the time. 
+While it may capture very rough trends, it is \textbf{terrible at predicting individual ratings} 
+and fails to produce meaningful recommendations for real users.
+
+In short, this model generates numbers but is nowhere near useful in practice. 
+If deployed as-is, users would receive mostly irrelevant recommendations.
+
+\subsection{Item Based CF}
+
+To implement item-based collaborative filtering, we first transpose the original user-item rating matrix. 
+In the user-item matrix, each row corresponds to a user and each column corresponds to a book. 
+By transposing the matrix, we switch the axes so that each row now represents a book and each column represents a user. 
+
+This transformation allows each book to be treated as a vector in the space of users, 
+where the entries correspond to the ratings given by all users. 
+Computing similarity between books then becomes a matter of comparing these vectors, 
+typically using cosine similarity or another similarity metric. 
+
+Formally, if $\mathbf{R} \in \mathbb{R}^{m \times n}$ is the original user-item matrix 
+with $m$ users and $n$ books, we construct the item-user matrix $\mathbf{R}^\top \in \mathbb{R}^{n \times m}$ 
+by taking the transpose. Each row $\mathbf{r}_i$ of $\mathbf{R}^\top$ is the rating vector for book $i$, 
+allowing us to compute similarities between books and generate recommendations based on item-to-item relationships.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/Model_building/book_book_cosine.png} % path to your image
+    \caption{Item Item cosine similarity heatmap}
+    \label{fig:item_item_cosine}
+\end{figure}
+
+Once the item-user matrix is constructed, we compute the similarity between books using cosine similarity. 
+This results in an item-item similarity matrix, where each entry quantifies how similar two books are based on the ratings they received from all users.
+
+For each book, we then identify the top-$K$ most similar books according to the similarity scores. 
+These neighbors are used to generate predicted ratings for all users: 
+for a given user and a target book, the predicted rating is calculated as a weighted average of the ratings that the user has given to the top-$K$ most similar books. 
+The weights correspond to the similarity scores between the target book and each neighbor.
+
+Repeating this process for every book and every user produces a full predicted rating matrix. 
+Each entry in this matrix represents the estimated rating a particular user would give to a specific book, 
+allowing the system to generate personalized recommendations based on item-to-item similarity rather than user-to-user similarity.
+
+\begin{figure}[H] % 'h' means here, can also use t=top, b=bottom
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/Model_building/item_based_prediction_matrix.png} % path to your image
+    \caption{Item based prediction atrix heatmap}
+    \label{fig:item_based_prediction}
+\end{figure}
+
+Examining the top-$N$ metrics, Precision@5 is only 0.0742, 
+meaning that out of the five books recommended to a user, 
+\textbf{less than one book on average is actually relevant}. 
+Even when $N$ is increased to 20, the system captures only about 16\% of the relevant items in Recall@20. 
+Precision decreases as more items are recommended, showing that most suggestions are irrelevant. 
+This modest improvement over the user-based method indicates that item-based collaborative filtering 
+captures some patterns in item similarity, but it is still extremely weak for meaningful recommendations. 
+Sparse user ratings and limited overlap between items are major limiting factors.
+
+The rating prediction errors remain severe. 
+A mean absolute error (MAE) of 7.1474 and a root mean squared error (RMSE) of 7.4423 indicate that, 
+on average, the predicted ratings are \textbf{off by more than 7 points}, which is substantial on a typical 1--10 scale. 
+The mean squared error (MSE) of 55.3873 highlights that some predictions are catastrophically wrong. 
+While the item-based approach slightly improves ranking of relevant items compared to user-based collaborative filtering, 
+it still \textbf{fails to predict actual ratings accurately} and would produce mostly useless recommendations if deployed.
+
+In summary, item-based collaborative filtering is only a small step forward. 
+Most recommendations remain irrelevant, and predicted ratings are wildly inaccurate, 
+making this method far from practical for real-world usage.
+
+\section{Content Based Filtering}

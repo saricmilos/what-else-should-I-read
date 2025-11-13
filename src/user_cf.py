@@ -12,15 +12,20 @@ class UserBasedCF:
         self.min_book_ratings = min_book_ratings
         self.k_neighbors = k_neighbors
         self.random_seed = random_seed
+        
         self.user_encoder = LabelEncoder()
         self.item_encoder = LabelEncoder()
+        
+        self.train_df = None
+        self.test_df = None
         self.train_matrix = None
         self.user_sim_matrix = None
         self.pred_matrix = None
-        self.train_df = None
-        self.test_df = None
         self.user_means = None
 
+    # -----------------------------
+    # 1. Filter dataframe
+    # -----------------------------
     def filter_dataframe(self, df: pd.DataFrame):
         """Filter dataframe to remove users/books with few ratings."""
         cf_df = df[['user_id', 'book_title', 'book_rating']].copy()
@@ -45,6 +50,9 @@ class UserBasedCF:
         print("Filtered dataframe shape:", cf_df_filtered.shape)
         return cf_df_filtered
 
+    # -----------------------------
+    # 2. Train-test split
+    # -----------------------------
     def train_test_split(self, df: pd.DataFrame, test_frac=0.2):
         """Split dataframe into train/test while keeping each user in train."""
         rng = np.random.RandomState(self.random_seed)
@@ -72,6 +80,9 @@ class UserBasedCF:
         self.test_df['user_idx'] = self.user_encoder.transform(self.test_df['user_id'])
         self.test_df['book_idx'] = self.item_encoder.transform(self.test_df['book_title'])
 
+    # -----------------------------
+    # 3. Build train matrix
+    # -----------------------------
     def build_train_matrix(self):
         """Build sparse user-item matrix from training data."""
         num_users = self.train_df['user_idx'].nunique()
@@ -83,11 +94,17 @@ class UserBasedCF:
         )
         return self.train_matrix
 
+    # -----------------------------
+    # 4. Compute user similarity
+    # -----------------------------
     def compute_user_similarity(self):
         """Compute cosine similarity between users."""
         self.user_sim_matrix = cosine_similarity(self.train_matrix)
         np.fill_diagonal(self.user_sim_matrix, 0)
 
+    # -----------------------------
+    # 5. Predict ratings
+    # -----------------------------
     def predict_ratings(self):
         """Predict ratings using top-k similar users."""
         num_users, num_items = self.train_matrix.shape
@@ -107,6 +124,9 @@ class UserBasedCF:
 
         self.pred_matrix = np.nan_to_num(self.pred_matrix)
 
+    # -----------------------------
+    # 6. Recommend books for user
+    # -----------------------------
     def recommend_books_by_user(self, user_id, top_k=10):
         """Return top-k book recommendations for a given user."""
         user_idx = self.user_encoder.transform([user_id])[0]
@@ -119,6 +139,9 @@ class UserBasedCF:
         top_books_idx = np.argsort(-user_ratings)[:top_k]
         return self.item_encoder.inverse_transform(top_books_idx)
 
+    # -----------------------------
+    # 7. Evaluate metrics
+    # -----------------------------
     def evaluate_rmse_mae(self):
         """Evaluate prediction matrix on test set."""
         users = self.test_df['user_idx'].to_numpy()
@@ -131,6 +154,9 @@ class UserBasedCF:
         rmse = np.sqrt(mse)
         return {'MAE': mae, 'MSE': mse, 'RMSE': rmse}
 
+    # -----------------------------
+    # 8. Precision@N and Recall@N
+    # -----------------------------
     def precision_recall_at_n(self, N=10, threshold=4.0):
         """Compute Precision@N and Recall@N."""
         train_items = self.train_df.groupby('user_idx')['book_idx'].apply(set).to_dict()
