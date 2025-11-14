@@ -148,16 +148,18 @@ def preprocess_books_ratings_users(
     merged_df = merged_df[merged_df['book_rating']!=0]
     
     # Feature engineering
-    merged_df['user_avg_rating'] = merged_df.groupby('user_id')['book_rating'].transform('mean')
-    merged_df['user_num_ratings'] = merged_df.groupby('user_id')['book_rating'].transform('count')
+    merged_df.loc[:, 'user_avg_rating'] = merged_df.groupby('user_id')['book_rating'].transform('mean')
+    merged_df.loc[:, 'user_num_ratings'] = merged_df.groupby('user_id')['book_rating'].transform('count')
+
     
-    merged_df['book_avg_rating'] = merged_df.groupby('book_title')['book_rating'].transform('mean')
-    merged_df['book_num_ratings'] = merged_df.groupby('book_title')['book_rating'].transform('count')
-    merged_df['book_popularity_score'] = merged_df['book_avg_rating'] * np.log1p(merged_df['book_num_ratings'])
+    merged_df.loc[:, 'book_avg_rating'] = merged_df.groupby('book_title')['book_rating'].transform('mean')
+    merged_df.loc[:, 'book_num_ratings'] = merged_df.groupby('book_title')['book_rating'].transform('count')
+    merged_df.loc[:, 'book_popularity_score'] = merged_df['book_avg_rating'] * np.log1p(merged_df['book_num_ratings'])
     
-    merged_df['author_avg_rating'] = merged_df.groupby('book_author')['book_rating'].transform('mean')
-    merged_df['publisher_avg_rating'] = merged_df.groupby('publisher')['book_rating'].transform('mean')
-    merged_df['book_age'] = 2025 - merged_df['year_of_publication']
+    merged_df.loc[:, 'author_avg_rating'] = merged_df.groupby('book_author')['book_rating'].transform('mean')
+    merged_df.loc[:, 'publisher_avg_rating'] = merged_df.groupby('publisher')['book_rating'].transform('mean')
+
+    merged_df.loc[:, 'book_age'] = 2025 - merged_df['year_of_publication']
     
     # --- Add User Age Group ---
     merged_df['User_age_Group'] = pd.cut(
