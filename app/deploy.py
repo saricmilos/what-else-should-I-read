@@ -5,7 +5,6 @@ import logging
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
 from contextlib import asynccontextmanager
 
 logger = logging.getLogger("uvicorn.error")
@@ -76,15 +75,11 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "API is up. Check /health and /ready."}
+    return {"message": "API is up. Welcome to book recommender!"}
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-@app.get("/ready")
-def ready():
-    return {"ready": models_loaded}
 
 @app.get("/book_titles/")
 def get_book_titles():
@@ -126,3 +121,11 @@ def recommend_book(request: BookRequest):
 @app.get("/recommend_books/")
 def recommend_books_get(book_title: str, top_k: int = 10):
     return recommend_book(BookRequest(book_title=book_title, top_k=top_k))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "deploy:app",
+        host="0.0.0.0",
+        port=8000
+    )
