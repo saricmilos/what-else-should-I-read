@@ -28,7 +28,7 @@ def plot_top_categories(df, column, top_n=10, orientation='h', palette='pastel',
     plt.figure(figsize=(10, 6))
     
     if orientation == 'h':
-        sns.barplot(x=counts.values, y=counts.index, palette=palette)
+        sns.barplot(x=counts.values, y=counts.index, hue=counts.index, dodge=False, palette=palette, legend=False)
         plt.ylabel('')
         plt.xlabel(xlabel)
         # Annotate bars
@@ -37,7 +37,7 @@ def plot_top_categories(df, column, top_n=10, orientation='h', palette='pastel',
                      f"{value:.1f}" if show_percent else f"{int(value)}",
                      va='center')
     else:
-        sns.barplot(x=counts.index, y=counts.values, palette=palette)
+        sns.barplot(x=counts.index, y=counts.values, hue=counts.index, dodge=False, palette=palette, legend=False)
         plt.xlabel('')
         plt.ylabel(xlabel)
         plt.xticks(rotation=45, ha='right')
@@ -80,7 +80,8 @@ def plot_boxplot(df, column, by=None, title=None, xlabel=None, ylabel=None,
     if by:
         ax = sns.boxplot(x=by, y=column, data=df, palette=palette)
     else:
-        ax = sns.boxplot(y=column, data=df, palette=palette)
+        # single box: pick first color from palette
+        ax = sns.boxplot(y=column, data=df, color=sns.color_palette(palette)[0])
     
     # Titles and labels
     if title:
