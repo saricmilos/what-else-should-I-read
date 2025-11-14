@@ -1,0 +1,71 @@
+# flyctl launch added from .gitignore
+# Ignore Python virtual environments
+**\venv
+**\venv_books
+
+# Byte-compiled / optimized / DLL files
+**\__pycache__
+**\*.py[cod]
+**\*$py.class
+
+# macOS & Windows system files
+**\.DS_Store
+**\Thumbs.db
+
+# Environment and IDE settings
+**\.env
+**\.idea
+**\.vscode
+
+# Jupyter notebook checkpoints
+**\.ipynb_checkpoints
+
+# Docker artifacts
+**\*.log
+**\*.pid
+**\*.tar
+**\*.sock
+
+# Photos
+**\*.png
+**\*.jpg
+
+# Latex
+#Report
+**\*.fls
+**\*.fdb_latexmk
+**\*.aux
+**\*.synctex.gz
+#Slides
+**\*.nav
+**\*.snm
+**\*.toc
+**\*.out
+
+# flyctl launch added from venv_books\Lib\site-packages\debugpy\_vendored\pydevd\_pydevd_frame_eval\.gitignore
+venv_books\Lib\site-packages\debugpy\_vendored\pydevd\_pydevd_frame_eval\pydevd_frame_evaluator.*.so
+venv_books\Lib\site-packages\debugpy\_vendored\pydevd\_pydevd_frame_eval\pydevd_frame_evaluator.*.pyd
+venv_books\Lib\site-packages\debugpy\_vendored\pydevd\_pydevd_frame_eval\pydevd_frame_evaluator.pyx
+
+# flyctl launch added from venv_books\Lib\site-packages\debugpy\_vendored\pydevd\pydevd_attach_to_process\linux_and_mac\.gitignore
+venv_books\Lib\site-packages\debugpy\_vendored\pydevd\pydevd_attach_to_process\linux_and_mac\attach_x86.dylib
+venv_books\Lib\site-packages\debugpy\_vendored\pydevd\pydevd_attach_to_process\linux_and_mac\attach_x86_64.dylib
+venv_books\Lib\site-packages\debugpy\_vendored\pydevd\pydevd_attach_to_process\linux_and_mac\attach_linux_x86.o
+venv_books\Lib\site-packages\debugpy\_vendored\pydevd\pydevd_attach_to_process\linux_and_mac\attach_linux_x86_64.o
+
+# flyctl launch added from venv_books\Lib\site-packages\jupyterlab_widgets\.gitignore
+venv_books\Lib\site-packages\jupyterlab_widgets\**\*.suo
+venv_books\Lib\site-packages\jupyterlab_widgets\**\*.user
+venv_books\Lib\site-packages\jupyterlab_widgets\**\.DS_Store
+venv_books\Lib\site-packages\jupyterlab_widgets\**\node_modules
+venv_books\Lib\site-packages\jupyterlab_widgets\**\typings\tsd.d.ts
+venv_books\Lib\site-packages\jupyterlab_widgets\**\npm-debug.log
+venv_books\Lib\site-packages\jupyterlab_widgets\**\test\build
+venv_books\Lib\site-packages\jupyterlab_widgets\**\test\coverage
+venv_books\Lib\site-packages\jupyterlab_widgets\**\lib
+venv_books\Lib\site-packages\jupyterlab_widgets\**\dist
+venv_books\Lib\site-packages\jupyterlab_widgets\**\build
+venv_books\Lib\site-packages\jupyterlab_widgets\**\docs
+venv_books\Lib\site-packages\jupyterlab_widgets\**\example\*.js
+venv_books\Lib\site-packages\jupyterlab_widgets\**\static
+fly.toml
