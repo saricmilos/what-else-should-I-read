@@ -29,6 +29,10 @@ Thumbs.db
 *.png
 *.jpg
 
+# Pdfs and Saved Models
+*.pdf
+*.pkl
+
 # Latex
 #Report
 *.fls
