@@ -81,10 +81,13 @@ def root():
 def health():
     return {"status": "ok"}
 
+# ... existing code ...
+
 @app.get("/book_titles/")
 def get_book_titles():
     """
     Returns all available book titles for autocomplete functionality.
+    DEPRECATED: Use /search_books/ instead for better performance.
     """
     if not models_loaded:
         raise HTTPException(status_code=503, detail="Models not loaded on server.")
@@ -93,6 +96,42 @@ def get_book_titles():
         raise HTTPException(status_code=500, detail="Book titles not available.")
     
     return {"book_titles": book_titles_list}
+
+@app.get("/search_books/")
+def search_books(query: str, limit: int = 20):
+    """
+    Search for books by title prefix/substring.
+    Returns matching book titles for autocomplete.
+    """
+    if not models_loaded:
+        raise HTTPException(status_code=503, detail="Models not loaded on server.")
+    
+    if not book_titles_list:
+        raise HTTPException(status_code=500, detail="Book titles not available.")
+    
+    # Validate query
+    query = query.strip()
+    if len(query) < 1:
+        raise HTTPException(status_code=400, detail="Query must be at least 1 character.")
+    
+    # Search for matches (case-insensitive)
+    query_lower = query.lower()
+    matches = [
+        title for title in book_titles_list 
+        if query_lower in title.lower()
+    ]
+    
+    # Limit results
+    matches = matches[:limit]
+    
+    logger.info(f"Search query '{query}' returned {len(matches)} results")
+    
+    return {
+        "query": query,
+        "results": matches,
+        "total_matches": len(matches)
+    }
+
 
 @app.post("/recommend_items/")
 def recommend_book(request: BookRequest):
