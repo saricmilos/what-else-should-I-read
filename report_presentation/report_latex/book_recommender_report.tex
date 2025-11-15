@@ -78,7 +78,7 @@ Predictions are restricted to this dataset without using external sources unless
 \end{itemize}
 
 
-\section{Neighborhood-Based Collaborative Filtering}\label{sec:collaborative_filter}
+\section{Collaborative Filtering}\label{sec:collaborative_filter}
 
 Collaborative filtering creates a model based on a user's past actions such as items they have purchased, selected, or
 rated, as well as the behavior of other users with similar preferences. This model is then used to recommend items or predict 
@@ -611,51 +611,6 @@ they are sorted by score, and the top-$K$ books are recommended to the user, exc
 This process allows the system to suggest books that are most likely to match the user's tastes based on the features encoded
 in the vectors.
 
-\begin{figure}[H]
-\centering
-\scalebox{0.85}{
-\begin{tikzpicture}[
-    node distance=1.7cm and 2.2cm,
-    box/.style={
-        rectangle, rounded corners, draw=black, fill=green!15, 
-        text width=3.4cm, align=center, minimum height=0.9cm,
-        font=\small
-    },
-    arrow/.style={->, thick}
-]
-
-% Nodes
-\node[box] (users) {Users \\[3pt]\footnotesize Provide ratings and demographic info};
-\node[box, right=of users] (obtain) {Obtain User Information \\[3pt]\footnotesize Collect rating history and features};
-\node[box, right=of obtain] (builduser) {Build User Models \\[3pt]\footnotesize Average feature vectors of liked books};
-\node[box, right=of builduser] (update) {Update Models \\[3pt]\footnotesize Adjust profiles with new ratings};
-
-\node[box, below=of builduser] (feedback) {Feedback or Interest Change \\[3pt]\footnotesize User interactions refine profiles};
-
-\node[box, below=of obtain] (buildobject) {Build Object Feature Models \\[3pt]\footnotesize Encode books with TF–IDF + numeric data};
-\node[box, right=of buildobject] (similarity) {Similarity Comparison \\[3pt]\footnotesize Cosine similarity between user and book vectors};
-\node[box, right=of similarity] (history) {Personalized Information \\[3pt]\footnotesize Combine past preferences with results};
-\node[box, below=of history] (results) {Provide Recommendation Results \\[3pt]\footnotesize Return top-N most similar books};
-
-% Arrows
-\draw[arrow] (users) -- (obtain);
-\draw[arrow] (obtain) -- (builduser);
-\draw[arrow] (builduser) -- (update);
-\draw[arrow] (builduser) -- (feedback);
-\draw[arrow] (update) |- (similarity);
-\draw[arrow] (feedback) -| (update);
-\draw[arrow] (buildobject) -- (similarity);
-\draw[arrow] (similarity) -- (history);
-\draw[arrow] (history) -- (results);
-\draw[arrow] (results) -| (users);
-
-\end{tikzpicture}
-}
-\caption{Flowchart of the Content-Based Filtering process with steps implemented in the book recommender system.}
-\label{fig:cbf-flowchart}
-\end{figure}
-
-
 \subsection{Item-Based Collaborative Filtering vs. Content-Based Filtering}
 
 Although both methods aim to recommend items similar to those a user already liked, they differ in what information they rely on and how they define similarity.
@@ -682,387 +637,6 @@ The guiding principle is: \textit{``You liked this because of its content, so yo
 \textbf{Advantages:} Content-based filtering handles new items efficiently, as recommendations rely on item features rather than prior user interactions. It also provides greater transparency, explaining why a particular item is recommended. For example, a movie may be suggested because it shares the same genre or actors as previously liked movies, allowing users to make informed decisions.  
 
 \textbf{Disadvantages:} Content-based filtering is limited by the features available to describe items. If a user’s preference is based on characteristics not captured in the item profile (e.g., specific plot elements or production details), the system may fail to provide relevant recommendations. Moreover, it tends to overspecialize, suggesting items very similar to those already liked, which reduces diversity and limits discovery of new or unexpected items.
-
-\section{Similarity/Distance Measures}\label{sec:similarity}
-
-In content-based filtering, items are compared using their feature representations, and those that are closer in feature space are
-considered more similar. In collaborative filtering, similarity is computed between users or items based on their interaction or rating
-patterns, with closer vectors indicating stronger similarity. Both approaches use metrics like cosine similarity or correlation to
-quantify closeness.
-
-\subsection{Cosine Similarity}\label{sec:cosine}
-
-One of the most common methods, especially for high-dimensional feature spaces, is \textbf{Cosine Similarity}. Cosine similarity measures
-cosine of the angle between two vectors, giving a value between -1 and 1. The closer the value is to 1, the more similar the items are considered. 
-
-\begin{center}
-\begin{tikzpicture}[scale=5]
-
-% Axes
-\draw[->, thick] (0,0) -- (1.5,0) node[anchor=north] {Book Feature 1 (Drama)};
-\draw[->, thick] (0,0) -- (0,1.5) node[anchor=east] {Book Feature 2 (Romance)};
-
-% Define vectors
-\coordinate (X) at (1,0.8);
-\coordinate (Y) at (0.8,1);
-
-% Draw book vectors
-\draw[->, thick, blue] (0,0) -- (X) node[midway, above right] {Book X};
-\draw[->, thick, red] (0,0) -- (Y) node[midway, above left] {Book Y};
-
-% Dashed projections to axes for Book X
-\draw[dashed] (X) -- (X|-0,0); % to x-axis
-\draw[dashed] (X) -- (0,0|-X); % to y-axis
-
-% Dashed projections to axes for Book Y
-\draw[dashed] (Y) -- (Y|-0,0); % to x-axis
-\draw[dashed] (Y) -- (0,0|-Y); % to y-axis
-
-% Compute angles of vectors
-\pgfmathsetmacro{\angleX}{atan2(0.8,1)} % vector X
-\pgfmathsetmacro{\angleY}{atan2(1,0.8)} % vector Y
-
-% Draw angle arc between vectors
-\draw[thick] (0,0) +(\angleX:0.3) arc[start angle=\angleX, end angle=\angleY, radius=0.3];
-\node at (0.18,0.22) {$\theta$};
-
-\end{tikzpicture}
-\end{center}
-
-Here, $\theta$ is the angle between vectors $\mathbf{x}$ and $\mathbf{y}$. Cosine similarity measures how aligned these vectors are: the smaller the angle, the closer the similarity is to 1.
-
-\textbf{Intuition:} Cosine similarity focuses on the direction of vectors rather than their magnitude. Two items with similar feature patterns
- are considered similar, even if one has generally higher values than the other.
-
-The formula for cosine similarity between two item vectors $\mathbf{x}$ and $\mathbf{y}$ is:
-
-\begin{equation}
-\text{sim}(\mathbf{x}, \mathbf{y}) = \frac{\mathbf{x} \cdot \mathbf{y}}{\|\mathbf{x}\| \, \|\mathbf{y}\|} 
-= \frac{\sum_{i=1}^{n} x_i y_i}{\sqrt{\sum_{i=1}^{n} x_i^2} \; \sqrt{\sum_{i=1}^{n} y_i^2}}
-\end{equation}
-
-Here, $\mathbf{x} \cdot \mathbf{y}$ represents the dot product of the two vectors, where $\mathbf{x}$ and $\mathbf{y}$ are vectors, for example,
-item feature vectors in a recommendation system and $\|\mathbf{x}\|$ and $\|\mathbf{y}\|$ are the magnitudes (lengths) of the vectors.
-This metric allows the system to quantify similarity between items and recommend those that are most closely aligned with the user's
-previous preferences.
-
-In content-based filtering, each item is represented as a vector in a multi-dimensional feature space. For example, a book could be represented as
-\[
-\mathbf{x} = [\text{drama score}, \text{romance score}, \text{adventure score}, \dots].
-\]
-
-\begin{itemize}
-    \item The \textbf{dot product} of two vectors $\mathbf{x}$ and $\mathbf{y}$ quantifies how much the vectors point in the same direction:
-    \begin{equation}
-    \mathbf{x} \cdot \mathbf{y} = x_1 y_1 + x_2 y_2 + \dots + x_n y_n = \sum_{i=1}^{n} x_i y_i
-    \end{equation}
-    Each term represents the contribution of a feature to the overall similarity.
-    \item The \textbf{norm} or length of a vector is:
-    \begin{equation}
-    \|\mathbf{x}\| = \sqrt{x_1^2 + x_2^2 + \dots + x_n^2}
-    \end{equation}
-    Normalizing by the vector lengths ensures that cosine similarity measures direction rather than magnitude.
-\end{itemize}
-
-Cosine similarity is then defined as:
-\begin{equation}
-\text{sim}(\mathbf{x}, \mathbf{y}) = \frac{\mathbf{x} \cdot \mathbf{y}}{\|\mathbf{x}\| \, \|\mathbf{y}\|} = \cos \theta
-\end{equation}
-
-\noindent where $\theta$ is the angle between the vectors. The similarity ranges from $-1$ (opposite) to $1$ (identical), with $0$ indicating orthogonal (no similarity).
-
-\subsubsection{Euclidean Distance}
-
-Euclidean distance is a way to measure how far apart two items are in a multi-dimensional feature space. It is the length of the straight line connecting the two points representing the items. In recommendation systems, a smaller Euclidean distance between two items indicates that they are more similar in terms of their features.
-
-Suppose we represent two books as feature vectors:
-\[
-\mathbf{x} = (\text{drama score}, \text{romance score}, \dots), \quad
-\mathbf{y} = (\text{drama score}, \text{romance score}, \dots)
-\]
-
-For \(n\) features, the Euclidean distance between \(\mathbf{x}\) and \(\mathbf{y}\) is:
-
-\begin{equation}
-d(\mathbf{x}, \mathbf{y}) = \sqrt{ (\text{drama}_x - \text{drama}_y)^2 + (\text{romance}_x - \text{romance}_y)^2 + \dots }
-= \sqrt{ \sum_{i=1}^{n} (x_i - y_i)^2 }
-\end{equation}
-
-\begin{itemize}
-    \item Each term \((x_i - y_i)^2\) measures the squared difference in a single feature (e.g., drama, romance) between the two books.
-    \item Summing over all features gives a combined measure of difference across all dimensions.
-    \item Taking the square root converts this sum into the actual straight-line distance.
-\end{itemize}
-
-\textbf{Intuition:}  
-- Two books with similar ratings across all features will have a **small Euclidean distance**.  
-- Books with very different ratings in one or more features will have a **larger distance**.  
-
-\medskip
-
-\begin{center}
-\begin{tikzpicture}[scale=2]
-
-% Axes
-\draw[->, thick] (0,0) -- (4,0) node[right] {Drama};
-\draw[->, thick] (0,0) -- (0,4) node[above] {Romance};
-
-% Points representing books
-\coordinate (X) at (1.5,2.5);
-\coordinate (Y) at (3,1);
-
-% Draw points
-\filldraw[blue] (X) circle (2pt) node[above left] {Book X};
-\filldraw[red] (Y) circle (2pt) node[below right] {Book Y};
-
-% Draw Euclidean distance
-\draw[dashed, thick] (X) -- (Y) node[midway, above, sloped] {$d(\mathbf{x},\mathbf{y})$};
-
-% Dotted projections for Book X
-\draw[dotted, gray] (X) -- (X|-0,0); % horizontal to x-axis
-\draw[dotted, gray] (X) -- (0,0|-X); % vertical to y-axis
-
-% Dotted projections for Book Y
-\draw[dotted, gray] (Y) -- (Y|-0,0); % horizontal to x-axis
-\draw[dotted, gray] (Y) -- (0,0|-Y); % vertical to y-axis
-
-\end{tikzpicture}
-\end{center}
-
-
-This diagram shows:
-\begin{itemize}
-    \item Each book as a point in a 2D feature space (Drama vs Romance).  
-    \item The dashed line representing the Euclidean distance between the books.  
-    \item Dotted lines showing the projections to each feature axis for clarity.  
-\end{itemize}
-
-
-\subsection{Pearson Correlation}\label{sec:pearson}
-
-Pearson correlation measures the **linear relationship** between two items across multiple features. Unlike cosine similarity or Euclidean distance, Pearson correlation **removes the effect of magnitude** by centering each vector on its mean. This makes it useful when we care about **rating patterns** rather than absolute values.
-
-\paragraph{Definition}
-
-Given two books represented as feature vectors:
-\[
-\mathbf{x} = [\text{drama}_x, \text{romance}_x, \dots], \quad
-\mathbf{y} = [\text{drama}_y, \text{romance}_y, \dots]
-\]
-
-Let \(\bar{x}\) and \(\bar{y}\) be the mean values of the features of each book:
-\[
-\bar{x} = \frac{1}{n} \sum_{i=1}^{n} x_i, \quad
-\bar{y} = \frac{1}{n} \sum_{i=1}^{n} y_i
-\]
-
-The Pearson correlation is:
-
-\begin{equation}
-\text{corr}(\mathbf{x}, \mathbf{y}) =
-\frac{\sum_{i=1}^{n} (x_i - \bar{x}) (y_i - \bar{y})}
-     {\sqrt{\sum_{i=1}^{n} (x_i - \bar{x})^2} \; \sqrt{\sum_{i=1}^{n} (y_i - \bar{y})^2}}
-\end{equation}
-
-\begin{itemize}
-    \item Each feature is **mean-centered**: we subtract the book's average feature value.  
-    \item The numerator computes the **covariance** between the two books' features.  
-    \item The denominator normalizes by the magnitude of the mean-centered vectors, giving a value between \(-1\) and \(1\).  
-\end{itemize}
-
-\paragraph{Interpretation}
-
-\begin{itemize}
-    \item \(+1\) → features vary together perfectly (strong positive correlation).  
-    \item \(0\) → no linear relationship between features.  
-    \item \(-1\) → features vary in opposite directions (strong negative correlation).  
-\end{itemize}
-
-\medskip
-
-\textbf{Example in 2D feature space: Drama vs Romance}
-
-\begin{center}
-\begin{tikzpicture}[scale=2]
-
-% Axes
-\draw[->, thick] (0,0) -- (4,0) node[right] {Drama};
-\draw[->, thick] (0,0) -- (0,4) node[above] {Romance};
-
-% Original book vectors
-\coordinate (X) at (1.5,2.5);
-\coordinate (Y) at (3,1);
-
-% Draw points
-\filldraw[blue] (X) circle (2pt) node[above left] {Book X};
-\filldraw[red] (Y) circle (2pt) node[below right] {Book Y};
-
-% Mean-centered vectors (shifted to origin)
-\coordinate (Xc) at (X);
-\coordinate (Yc) at (Y);
-
-% Draw dashed line connecting mean-centered vectors
-\draw[dashed, thick] (Xc) -- (Yc) node[midway, above, sloped] {covariance component};
-
-% Draw axes from mean
-\draw[dotted, gray] (Xc) -- (Xc|-0,0); % horizontal projection
-\draw[dotted, gray] (Xc) -- (0,0|-Xc); % vertical projection
-\draw[dotted, gray] (Yc) -- (Yc|-0,0); % horizontal projection
-\draw[dotted, gray] (Yc) -- (0,0|-Yc); % vertical projection
-
-\end{tikzpicture}
-\end{center}
-
-\textbf{Notes:}  
-\begin{itemize}
-    \item The vectors are **mean-centered** by subtracting each book's average feature value.  
-    \item The dashed line visually represents the **co-movement of features** contributing to Pearson correlation.  
-    \item This method measures **pattern similarity**, so two books with similar relative features but different absolute levels can still have a high correlation.
-\end{itemize}
-
-\section{Evaluation Metrics}\label{sec:evaluation}
-
-To assess the performance of the content-based recommender system, we employ two categories of evaluation metrics: 
-(1) prediction accuracy metrics, which measure how accurately the system predicts user ratings, and 
-(2) top-N recommendation metrics, which evaluate the quality of the ranked lists of recommended books.
-
-    \subsection{Prediction Accuracy Metrics}
-    These metrics evaluate how close the predicted ratings $\hat{r}_{ui}$ are to 
-    the actual user ratings $r_{ui}$.
-
-    \begin{itemize}
-        \item \textbf{Mean Absolute Error (MAE)}
-        \begin{equation}
-        MAE = \frac{1}{|T|} \sum_{(u,i) \in T} |r_{ui} - \hat{r}_{ui}|
-        \end{equation}
-        where $T$ denotes the test set of user--item pairs. Lower MAE indicates higher predictive accuracy.
-
-        \item \textbf{Root Mean Squared Error (RMSE)}
-        \begin{equation}
-        RMSE = \sqrt{ \frac{1}{|T|} \sum_{(u,i) \in T} (r_{ui} - \hat{r}_{ui})^2 }
-        \end{equation}
-        RMSE penalizes larger errors more heavily than MAE, and thus reflects how severely the system deviates from the actual ratings.
-
-        \item \textbf{Mean Squared Error (MSE)}
-        \begin{equation}
-        MSE = \frac{1}{|T|} \sum_{(u,i) \in T} (r_{ui} - \hat{r}_{ui})^2
-        \end{equation}
-        MSE serves as the base metric for RMSE, providing a measure of the average squared deviation between predicted and true ratings.
-
-        \item \textbf{Normalized Mean Absolute Error (NMAE)}
-        \begin{equation}
-        NMAE = \frac{MAE}{r_{\text{max}} - r_{\text{min}}}
-        \end{equation}
-        NMAE normalizes the MAE by the range of the rating scale, enabling comparability across datasets with different rating intervals.
-    \end{itemize}
-
-    \subsection{Top-N Recommendation Metrics}
-    When the system produces a ranked list of recommended items, ranking-based metrics are preferred over pure rating prediction metrics.
-
-    \begin{itemize}
-        \item \textbf{Precision@N}
-        \begin{equation}
-        Precision@N = \frac{\text{Number of relevant items in top } N}{N}
-        \end{equation}
-        Precision@N measures the proportion of relevant items among the top-$N$ recommendations.
-
-        \item \textbf{Recall@N}
-        \begin{equation}
-        Recall@N = \frac{\text{Number of relevant items in top } N}{\text{Total number of relevant items}}
-        \end{equation}
-        Recall@N evaluates how well the system retrieves all relevant items for a user, indicating the completeness of recommendations.
-    \end{itemize}
-
-\section{Deployment of Book Recommendation System}
-
-Having an app on our local system simply isn't enough, it needs to be accessible online.
-Deployment is the process of making your application available for users so they can access and interact with it.
-It usually means moving your code from a development environment to a live production environment, where the application is fully operational.
-
-
-\begin{enumerate}
-    \item \textbf{User Input:} The user types a book title (and optionally a user ID) in the application interface.
-    \item \textbf{User Interface / Front END:} The user using frontent sends a request and formats it into an API request (e.g., JSON) that is sent to the API.
-    \item \textbf{API:} The API acts as a gateway. It receives the request, validates it, and forwards it to the server. It also ensures that only necessary information is exchanged, keeping internal details secure.
-    \item \textbf{Server / Client APP / Backend:} The server runs the recommendation logic:
-        \begin{itemize}
-            \item Looks up the book embedding from the Oracle database or computes it if it’s free text.
-            \item Performs a nearest-neighbor search in the embedding space to find similar books.
-            \item Optionally combines item similarity with user profile data for personalization.
-        \end{itemize}
-    \item \textbf{Oracle Database:} Stores all persistent data, including books, embeddings, and user interaction history. The server queries it using SQL, retrieves the necessary data, and processes it in memory.
-    \item \textbf{Response:} After computing the Top-N recommended books, the server sends the results back to the API, which forwards them to the client app. The user sees the recommendations seamlessly in the interface.
-\end{enumerate}
-
-
-\begin{center}
-\begin{tikzpicture}[
-  box/.style={draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, align=center, fill=#1!30, text centered},
-  arrow/.style={-{Stealth[length=2.5mm]}, thick, color=#1},
-  node distance=1.5cm
-]
-
-% Top row nodes
-\node[box=blue] (user) {User \\ (types book name)};
-\node[box=green, right=of user] (client) {User Interface \\ (sends request)};
-\node[box=orange, right=of client] (api) {API \\ (handles request/response)};
-\node[box=red, right=of api] (server) {Server / Client App \\ (runs recommendation model)};
-\node[box=cyan, below=1.5cm of server] (db) {Oracle Database \\ (stores books, embeddings, user data)};
-\node[box=purple, below=1.5cm of api] (response) {Response \\ (recommended books)};
-
-% Top arrows (request)
-\draw[arrow=blue] (user) -- (client);
-\draw[arrow=green] (client) -- (api);
-\draw[arrow=orange] (api) -- (server);
-\draw[arrow=red] (server.south) -- (db.north);
-
-% Database response to server
-\draw[arrow=cyan] (db.north) -- ++(0,0.5) -| (server.south);
-
-% Response arrows back to client/user
-\draw[arrow=purple] (server.south east) -- (response.north west);
-\draw[arrow=purple] (response.north east) -- (api.south);
-\draw[arrow=orange] (api.west) -- ++(-0.9,0) |- (client.south);
-\draw[arrow=green] (client.north) -- ++(-0.9,0) |- (user.south);
-
-\end{tikzpicture}
-\end{center}
-
-\begin{itemize}
-    \item \textbf{User $\rightarrow$ User Interface $\rightarrow$ API $\rightarrow$ Server/Client App $\rightarrow$ Database:} This is the request path.
-    \item \textbf{Database $\rightarrow$ Server/Client App $\rightarrow$ API $\rightarrow$ User Interface $\rightarrow$ User:} This is the response path.
-    \item The API acts as a secure bridge and ensures that internal server and database logic is not exposed to the client or user.
-    \item The Oracle database stores all persistent data, and the server retrieves only what is needed for computing recommendations.
-    \item The server performs the actual recommendation computation, including vector lookups, nearest-neighbor searches, and optional personalization.
-\end{itemize}
-
-
-\subsection{Application Programming Interface (API)}
-
-An API, short for Application Programming Interface, is basically a bridge that lets different software programs talk to each other.
-It defines a set of rules and protocols that allow applications to exchange data, features, or functionality. 
-Instead of building every feature from scratch, developers can use APIs to connect their apps with existing services or data sources,
-saving time and effort.
-APIs also give application owners a controlled and secure way to share certain parts of their app's data or capabilities—either with
-internal teams or with outside users. They're designed to expose only the specific information or actions that are needed for a given 
-task, not the entire system. By doing this, APIs help protect sensitive information and maintain overall system security while still
-enabling smooth, efficient communication between different software systems.
-
-It helps to think of API communication as a conversation between a client and a server. In a book recommender system,
- the user's app—the client—sends a request, and the server responds with recommendations.
-  The API is the bridge that makes this connection possible.
-
-Here's how it works in practice: imagine a user types in the name of a book they like. When they hit “Submit,” 
-the app sends this information as a request through the API. 
-The request travels to the server, which runs a trained recommendation model to find books similar to the one the user entered.
-
-The server then sends back a response containing a list of recommended books. 
-The API takes this data and delivers it to the app, so the user sees their personalized recommendations almost instantly.
-
-From the user's perspective, it feels seamless—they just type a book name and get suggestions.
- Behind the scenes, though, the API is carefully handling the request and response, sharing only the information needed, 
- keeping the system secure, and making sure the app and server communicate smoothly.
-
 
 \section{Exploratory Data Analysis (EDA) and Data Preparation}
 
@@ -1808,4 +1382,300 @@ In summary, item-based collaborative filtering is only a small step forward.
 Most recommendations remain irrelevant, and predicted ratings are wildly inaccurate, 
 making this method far from practical for real-world usage.
 
-\section{Content Based Filtering}
+\section{Deployment of Book Recommendation System}
+
+Having an app on our local system simply isn't enough, it needs to be accessible online.
+Deployment is the process of making your application available for users so they can access and interact with it.
+It usually means moving your code from a development environment to a live production environment, where the application is fully operational.
+
+
+\begin{enumerate}
+    \item \textbf{User Input:} The user types a book title (and optionally a user ID) in the application interface.
+    \item \textbf{User Interface / Front END:} The user using frontent sends a request and formats it into an API request (e.g., JSON) that is sent to the API.
+    \item \textbf{API:} The API acts as a gateway. It receives the request, validates it, and forwards it to the server. It also ensures that only necessary information is exchanged, keeping internal details secure.
+    \item \textbf{Server / Client APP / Backend:} The server runs the recommendation logic:
+        \begin{itemize}
+            \item Looks up the book embedding from the Oracle database or computes it if it’s free text.
+            \item Performs a nearest-neighbor search in the embedding space to find similar books.
+            \item Optionally combines item similarity with user profile data for personalization.
+        \end{itemize}
+    \item \textbf{Oracle Database:} Stores all persistent data, including books, embeddings, and user interaction history. The server queries it using SQL, retrieves the necessary data, and processes it in memory.
+    \item \textbf{Response:} After computing the Top-N recommended books, the server sends the results back to the API, which forwards them to the client app. The user sees the recommendations seamlessly in the interface.
+\end{enumerate}
+
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, align=center, fill=#1!30, text centered},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick, color=#1},
+  node distance=1.5cm
+]
+
+% Top row nodes
+\node[box=blue] (user) {User \\ (types book name)};
+\node[box=green, right=of user] (client) {User Interface \\ (sends request)};
+\node[box=orange, right=of client] (api) {API \\ (handles request/response)};
+\node[box=red, right=of api] (server) {Server / Client App \\ (runs recommendation model)};
+\node[box=cyan, below=1.5cm of server] (db) {Oracle Database \\ (stores books, embeddings, user data)};
+\node[box=purple, below=1.5cm of api] (response) {Response \\ (recommended books)};
+
+% Top arrows (request)
+\draw[arrow=blue] (user) -- (client);
+\draw[arrow=green] (client) -- (api);
+\draw[arrow=orange] (api) -- (server);
+\draw[arrow=red] (server.south) -- (db.north);
+
+% Database response to server
+\draw[arrow=cyan] (db.north) -- ++(0,0.5) -| (server.south);
+
+% Response arrows back to client/user
+\draw[arrow=purple] (server.south east) -- (response.north west);
+\draw[arrow=purple] (response.north east) -- (api.south);
+\draw[arrow=orange] (api.west) -- ++(-0.9,0) |- (client.south);
+\draw[arrow=green] (client.north) -- ++(-0.9,0) |- (user.south);
+
+\end{tikzpicture}
+\end{center}
+
+\begin{itemize}
+    \item \textbf{User $\rightarrow$ User Interface $\rightarrow$ API $\rightarrow$ Server/Client App $\rightarrow$ Database:} This is the request path.
+    \item \textbf{Database $\rightarrow$ Server/Client App $\rightarrow$ API $\rightarrow$ User Interface $\rightarrow$ User:} This is the response path.
+    \item The API acts as a secure bridge and ensures that internal server and database logic is not exposed to the client or user.
+    \item The Oracle database stores all persistent data, and the server retrieves only what is needed for computing recommendations.
+    \item The server performs the actual recommendation computation, including vector lookups, nearest-neighbor searches, and optional personalization.
+\end{itemize}
+
+
+\subsection{Application Programming Interface (API)}
+
+An API, short for Application Programming Interface, is basically a bridge that lets different software programs talk to each other.
+It defines a set of rules and protocols that allow applications to exchange data, features, or functionality. 
+Instead of building every feature from scratch, developers can use APIs to connect their apps with existing services or data sources,
+saving time and effort.
+APIs also give application owners a controlled and secure way to share certain parts of their app's data or capabilities—either with
+internal teams or with outside users. They're designed to expose only the specific information or actions that are needed for a given 
+task, not the entire system. By doing this, APIs help protect sensitive information and maintain overall system security while still
+enabling smooth, efficient communication between different software systems.
+
+It helps to think of API communication as a conversation between a client and a server. In a book recommender system,
+ the user's app—the client—sends a request, and the server responds with recommendations.
+  The API is the bridge that makes this connection possible.
+
+Here's how it works in practice: imagine a user types in the name of a book they like. When they hit “Submit,” 
+the app sends this information as a request through the API. 
+The request travels to the server, which runs a trained recommendation model to find books similar to the one the user entered.
+
+The server then sends back a response containing a list of recommended books. 
+The API takes this data and delivers it to the app, so the user sees their personalized recommendations almost instantly.
+
+From the user's perspective, it feels seamless—they just type a book name and get suggestions.
+ Behind the scenes, though, the API is carefully handling the request and response, sharing only the information needed, 
+ keeping the system secure, and making sure the app and server communicate smoothly.
+
+
+\section{Similarity/Distance Measures}\label{sec:similarity}
+
+In content-based filtering, items are compared using their feature representations, and those that are closer in feature space are
+considered more similar. In collaborative filtering, similarity is computed between users or items based on their interaction or rating
+patterns, with closer vectors indicating stronger similarity. Both approaches use metrics like cosine similarity or correlation to
+quantify closeness.
+
+\subsection{Cosine Similarity}\label{sec:cosine}
+
+One of the most common methods, especially for high-dimensional feature spaces, is \textbf{Cosine Similarity}. Cosine similarity measures
+cosine of the angle between two vectors, giving a value between -1 and 1. The closer the value is to 1, the more similar the items are considered. 
+
+\begin{center}
+\begin{tikzpicture}[scale=5]
+
+% Axes
+\draw[->, thick] (0,0) -- (1.5,0) node[anchor=north] {Book Feature 1 (Drama)};
+\draw[->, thick] (0,0) -- (0,1.5) node[anchor=east] {Book Feature 2 (Romance)};
+
+% Define vectors
+\coordinate (X) at (1,0.8);
+\coordinate (Y) at (0.8,1);
+
+% Draw book vectors
+\draw[->, thick, blue] (0,0) -- (X) node[midway, above right] {Book X};
+\draw[->, thick, red] (0,0) -- (Y) node[midway, above left] {Book Y};
+
+% Dashed projections to axes for Book X
+\draw[dashed] (X) -- (X|-0,0); % to x-axis
+\draw[dashed] (X) -- (0,0|-X); % to y-axis
+
+% Dashed projections to axes for Book Y
+\draw[dashed] (Y) -- (Y|-0,0); % to x-axis
+\draw[dashed] (Y) -- (0,0|-Y); % to y-axis
+
+% Compute angles of vectors
+\pgfmathsetmacro{\angleX}{atan2(0.8,1)} % vector X
+\pgfmathsetmacro{\angleY}{atan2(1,0.8)} % vector Y
+
+% Draw angle arc between vectors
+\draw[thick] (0,0) +(\angleX:0.3) arc[start angle=\angleX, end angle=\angleY, radius=0.3];
+\node at (0.18,0.22) {$\theta$};
+
+\end{tikzpicture}
+\end{center}
+
+Here, $\theta$ is the angle between vectors $\mathbf{x}$ and $\mathbf{y}$. Cosine similarity measures how aligned these vectors are: the smaller the angle, the closer the similarity is to 1.
+
+\textbf{Intuition:} Cosine similarity focuses on the direction of vectors rather than their magnitude. Two items with similar feature patterns
+ are considered similar, even if one has generally higher values than the other.
+
+The formula for cosine similarity between two item vectors $\mathbf{x}$ and $\mathbf{y}$ is:
+
+\begin{equation}
+\text{sim}(\mathbf{x}, \mathbf{y}) = \frac{\mathbf{x} \cdot \mathbf{y}}{\|\mathbf{x}\| \, \|\mathbf{y}\|} 
+= \frac{\sum_{i=1}^{n} x_i y_i}{\sqrt{\sum_{i=1}^{n} x_i^2} \; \sqrt{\sum_{i=1}^{n} y_i^2}}
+\end{equation}
+
+Here, $\mathbf{x} \cdot \mathbf{y}$ represents the dot product of the two vectors, where $\mathbf{x}$ and $\mathbf{y}$ are vectors, for example,
+item feature vectors in a recommendation system and $\|\mathbf{x}\|$ and $\|\mathbf{y}\|$ are the magnitudes (lengths) of the vectors.
+This metric allows the system to quantify similarity between items and recommend those that are most closely aligned with the user's
+previous preferences.
+
+In content-based filtering, each item is represented as a vector in a multi-dimensional feature space. For example, a book could be represented as
+\[
+\mathbf{x} = [\text{drama score}, \text{romance score}, \text{adventure score}, \dots].
+\]
+
+\begin{itemize}
+    \item The \textbf{dot product} of two vectors $\mathbf{x}$ and $\mathbf{y}$ quantifies how much the vectors point in the same direction:
+    \begin{equation}
+    \mathbf{x} \cdot \mathbf{y} = x_1 y_1 + x_2 y_2 + \dots + x_n y_n = \sum_{i=1}^{n} x_i y_i
+    \end{equation}
+    Each term represents the contribution of a feature to the overall similarity.
+    \item The \textbf{norm} or length of a vector is:
+    \begin{equation}
+    \|\mathbf{x}\| = \sqrt{x_1^2 + x_2^2 + \dots + x_n^2}
+    \end{equation}
+    Normalizing by the vector lengths ensures that cosine similarity measures direction rather than magnitude.
+\end{itemize}
+
+Cosine similarity is then defined as:
+\begin{equation}
+\text{sim}(\mathbf{x}, \mathbf{y}) = \frac{\mathbf{x} \cdot \mathbf{y}}{\|\mathbf{x}\| \, \|\mathbf{y}\|} = \cos \theta
+\end{equation}
+
+\noindent where $\theta$ is the angle between the vectors. The similarity ranges from $-1$ (opposite) to $1$ (identical), with $0$ indicating orthogonal (no similarity).
+
+\subsubsection{Euclidean Distance}
+
+Euclidean distance is a way to measure how far apart two items are in a multi-dimensional feature space. It is the length of the straight line connecting the two points representing the items. In recommendation systems, a smaller Euclidean distance between two items indicates that they are more similar in terms of their features.
+
+Suppose we represent two books as feature vectors:
+\[
+\mathbf{x} = (\text{drama score}, \text{romance score}, \dots), \quad
+\mathbf{y} = (\text{drama score}, \text{romance score}, \dots)
+\]
+
+For \(n\) features, the Euclidean distance between \(\mathbf{x}\) and \(\mathbf{y}\) is:
+
+\begin{equation}
+d(\mathbf{x}, \mathbf{y}) = \sqrt{ (\text{drama}_x - \text{drama}_y)^2 + (\text{romance}_x - \text{romance}_y)^2 + \dots }
+= \sqrt{ \sum_{i=1}^{n} (x_i - y_i)^2 }
+\end{equation}
+
+\begin{itemize}
+    \item Each term \((x_i - y_i)^2\) measures the squared difference in a single feature (e.g., drama, romance) between the two books.
+    \item Summing over all features gives a combined measure of difference across all dimensions.
+    \item Taking the square root converts this sum into the actual straight-line distance.
+\end{itemize}
+
+\textbf{Intuition:}  
+- Two books with similar ratings across all features will have a **small Euclidean distance**.  
+- Books with very different ratings in one or more features will have a **larger distance**.  
+
+\medskip
+
+\begin{center}
+\begin{tikzpicture}[scale=2]
+
+% Axes
+\draw[->, thick] (0,0) -- (4,0) node[right] {Drama};
+\draw[->, thick] (0,0) -- (0,4) node[above] {Romance};
+
+% Points representing books
+\coordinate (X) at (1.5,2.5);
+\coordinate (Y) at (3,1);
+
+% Draw points
+\filldraw[blue] (X) circle (2pt) node[above left] {Book X};
+\filldraw[red] (Y) circle (2pt) node[below right] {Book Y};
+
+% Draw Euclidean distance
+\draw[dashed, thick] (X) -- (Y) node[midway, above, sloped] {$d(\mathbf{x},\mathbf{y})$};
+
+% Dotted projections for Book X
+\draw[dotted, gray] (X) -- (X|-0,0); % horizontal to x-axis
+\draw[dotted, gray] (X) -- (0,0|-X); % vertical to y-axis
+
+% Dotted projections for Book Y
+\draw[dotted, gray] (Y) -- (Y|-0,0); % horizontal to x-axis
+\draw[dotted, gray] (Y) -- (0,0|-Y); % vertical to y-axis
+
+\end{tikzpicture}
+\end{center}
+
+
+This diagram shows:
+\begin{itemize}
+    \item Each book as a point in a 2D feature space (Drama vs Romance).  
+    \item The dashed line representing the Euclidean distance between the books.  
+    \item Dotted lines showing the projections to each feature axis for clarity.  
+\end{itemize}
+    
+\section{Evaluation Metrics}\label{sec:evaluation}
+
+To assess the performance of the content-based recommender system, we employ two categories of evaluation metrics: 
+(1) prediction accuracy metrics, which measure how accurately the system predicts user ratings, and 
+(2) top-N recommendation metrics, which evaluate the quality of the ranked lists of recommended books.
+
+    \subsection{Prediction Accuracy Metrics}
+    These metrics evaluate how close the predicted ratings $\hat{r}_{ui}$ are to 
+    the actual user ratings $r_{ui}$.
+
+    \begin{itemize}
+        \item \textbf{Mean Absolute Error (MAE)}
+        \begin{equation}
+        MAE = \frac{1}{|T|} \sum_{(u,i) \in T} |r_{ui} - \hat{r}_{ui}|
+        \end{equation}
+        where $T$ denotes the test set of user--item pairs. Lower MAE indicates higher predictive accuracy.
+
+        \item \textbf{Root Mean Squared Error (RMSE)}
+        \begin{equation}
+        RMSE = \sqrt{ \frac{1}{|T|} \sum_{(u,i) \in T} (r_{ui} - \hat{r}_{ui})^2 }
+        \end{equation}
+        RMSE penalizes larger errors more heavily than MAE, and thus reflects how severely the system deviates from the actual ratings.
+
+        \item \textbf{Mean Squared Error (MSE)}
+        \begin{equation}
+        MSE = \frac{1}{|T|} \sum_{(u,i) \in T} (r_{ui} - \hat{r}_{ui})^2
+        \end{equation}
+        MSE serves as the base metric for RMSE, providing a measure of the average squared deviation between predicted and true ratings.
+
+        \item \textbf{Normalized Mean Absolute Error (NMAE)}
+        \begin{equation}
+        NMAE = \frac{MAE}{r_{\text{max}} - r_{\text{min}}}
+        \end{equation}
+        NMAE normalizes the MAE by the range of the rating scale, enabling comparability across datasets with different rating intervals.
+    \end{itemize}
+
+    \subsection{Top-N Recommendation Metrics}
+    When the system produces a ranked list of recommended items, ranking-based metrics are preferred over pure rating prediction metrics.
+
+    \begin{itemize}
+        \item \textbf{Precision@N}
+        \begin{equation}
+        Precision@N = \frac{\text{Number of relevant items in top } N}{N}
+        \end{equation}
+        Precision@N measures the proportion of relevant items among the top-$N$ recommendations.
+
+        \item \textbf{Recall@N}
+        \begin{equation}
+        Recall@N = \frac{\text{Number of relevant items in top } N}{\text{Total number of relevant items}}
+        \end{equation}
+        Recall@N evaluates how well the system retrieves all relevant items for a user, indicating the completeness of recommendations.
+    \end{itemize}
