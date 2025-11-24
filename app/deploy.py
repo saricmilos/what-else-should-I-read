@@ -1,4 +1,4 @@
-# app/main.py
+# app/deploy.py
 import os
 import pickle
 import logging
@@ -6,6 +6,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from item_cf import recommend_similar_items
+from fastapi import Body, Query
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -77,26 +79,6 @@ app.add_middleware(
 def root():
     return {"message": "API is up. Welcome to book recommender!"}
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-# ... existing code ...
-
-@app.get("/book_titles/")
-def get_book_titles():
-    """
-    Returns all available book titles for autocomplete functionality.
-    DEPRECATED: Use /search_books/ instead for better performance.
-    """
-    if not models_loaded:
-        raise HTTPException(status_code=503, detail="Models not loaded on server.")
-    
-    if not book_titles_list:
-        raise HTTPException(status_code=500, detail="Book titles not available.")
-    
-    return {"book_titles": book_titles_list}
-
 @app.get("/search_books/")
 def search_books(query: str, limit: int = 20):
     """
@@ -133,21 +115,28 @@ def search_books(query: str, limit: int = 20):
     }
 
 
-@app.post("/recommend_items/")
-def recommend_book(request: BookRequest):
+@app.api_route("/recommend_books/", methods=["GET", "POST"])
+def recommend_books(
+    book_title: str = Query(None),
+    top_k: int = Query(10),
+    request_body: BookRequest = Body(None)
+):
     if not models_loaded:
         raise HTTPException(status_code=503, detail="Models not loaded on server.")
 
-    book_title = request.book_title
-    top_k = request.top_k
+    if request_body:
+        book_title = request_body.book_title
+        top_k = request_body.top_k
+
+    if not book_title:
+        raise HTTPException(status_code=400, detail="book_title is required.")
 
     try:
-        from src.item_cf import recommend_similar_items
         recommendations = recommend_similar_items(
             item_title=book_title,
             item_encoder=item_encoder,
             item_sim_matrix=item_sim_matrix,
-            k=top_k
+            k=top_k,
         )
     except ValueError:
         raise HTTPException(status_code=404, detail=f"Book '{book_title}' not found.")
@@ -156,10 +145,6 @@ def recommend_book(request: BookRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
     return {"book_title": book_title, "recommendations": list(recommendations)}
-
-@app.get("/recommend_books/")
-def recommend_books_get(book_title: str, top_k: int = 10):
-    return recommend_book(BookRequest(book_title=book_title, top_k=top_k))
 
 if __name__ == "__main__":
     import uvicorn

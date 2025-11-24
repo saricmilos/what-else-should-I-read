@@ -1,6 +1,6 @@
 # Ignore Python virtual environments
 venv/
-venv_books/
+book_recommender/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -30,7 +30,6 @@ Thumbs.db
 *.jpg
 
 # Pdfs and Saved Models
-*.pdf
 *.pkl
 
 # Latex
